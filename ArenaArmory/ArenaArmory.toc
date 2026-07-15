@@ -8,6 +8,7 @@
 ## X-Website: https://arenaarmory.com
 ## X-Category: PvP
 ## X-Curse-Project-ID: 1610901
+## X-Wago-ID: b6XeJbKp
 
 embeds.xml
 
