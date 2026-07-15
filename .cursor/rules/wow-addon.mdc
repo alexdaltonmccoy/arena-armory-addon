@@ -1,0 +1,18 @@
+---
+description: WoW TBC Classic addon development constraints for Arena Armory
+alwaysApply: true
+---
+
+# Arena Armory Addon Rules
+
+- Target client: Burning Crusade Classic Anniversary 2.5.6, TOC `## Interface: 20506`. The 2.5.6 client shares modern (Midnight) UI code, but Midnight's addon security (secret values, CLEU removal) is DISABLED in Classic.
+- Language is Lua 5.1 in the WoW sandbox: no `io`, `os`, `require`, or file access. Persistence only via SavedVariables declared in the TOC (`ArenaArmoryDB` for config through AceDB, `ArenaArmoryMatches` for match records). SavedVariables flush to disk only on logout or `/reload`.
+- Load order is defined in `ArenaArmory.toc`: embeds.xml (libs) -> Core -> Data -> Modules -> Options. New files must be added to the TOC or they will not load.
+- Use the bundled Ace3 in `ArenaArmory/Libs` (AceAddon/AceEvent/AceTimer/AceConsole/AceDB/AceConfig) and DRList-1.0. Modules are `addon:NewModule("Name", "AceEvent-3.0")`; cross-module communication uses AceEvent messages (`AA_ARENA_JOINED`, `AA_ARENA_LEFT`, `AA_OPPONENT_UPDATE`, `AA_CLEU`, `AA_TRINKET_USED`, `AA_SPEC_DETECTED`, `AA_FRAMES_CREATED`).
+- CLEU is fanned out once from `Core/Core.lua` via `CombatLogGetCurrentEventInfo()`; subscribe to the `AA_CLEU` message instead of registering `COMBAT_LOG_EVENT_UNFILTERED` again.
+- Never call `Frame:Show()/Hide()` or change secure attributes on the unit buttons while `InCombatLockdown()` is true.
+- Prefer compat wrappers in `Core/Core.lua` (`AA.GetAuraByIndex`, `AA.GetSpellTexture`, `AA.GetSpellName`) over raw `UnitAura`/`GetSpellInfo`, since 2.5.6 may expose modern `C_UnitAuras`/`C_Spell` APIs instead of legacy ones.
+- Spell IDs must be TBC (2.4.3-era) rank IDs, not retail IDs. Verify against wowhead.com/tbc or DRList's Spells.lua before adding.
+- Do not invent WoW API functions. If unsure whether an API exists on 2.5.6, guard with a nil-check or check warcraft.wiki.gg.
+- After editing Lua, run `node .tools/check-lua.js` to syntax-check all addon files as Lua 5.1.
+- Match record schema changes require bumping `SCHEMA_VERSION` in `Modules/Recorder.lua` and keeping the desktop app parser in sync.

@@ -1,0 +1,16 @@
+# BigWigs packager config (https://github.com/BigWigsMods/packager).
+# The addon lives in the ArenaArmory/ subfolder; everything else in the repo
+# (marketing assets, scripts) is excluded from the shipped zip.
+
+package-as: ArenaArmory
+
+move-folders:
+  ArenaArmory/ArenaArmory: ArenaArmory
+
+ignore:
+  - marketing
+  - scripts
+  - dist
+  - README.md
+
+enable-toc-creation: no

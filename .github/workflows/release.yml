@@ -1,0 +1,39 @@
+# Packages the addon and uploads it to CurseForge, Wago, and GitHub Releases
+# whenever a version tag (v1.2.3) is pushed. WowUp installs from CurseForge /
+# Wago / GitHub automatically once those listings exist - no extra publishing
+# step needed.
+#
+# Required repo secrets (Settings -> Secrets and variables -> Actions):
+#   CF_API_KEY      - https://authors.curseforge.com/account/api-tokens
+#   WAGO_API_TOKEN  - https://addons.wago.io/account/apikeys
+# GITHUB_TOKEN is provided automatically for the GitHub release.
+#
+# The upload targets are resolved from the TOC:
+#   ## X-Curse-Project-ID: <numeric id from the CurseForge project page>
+#   ## X-Wago-ID: <id from the Wago addon dashboard>
+name: Release AddOn
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Package and release
+        uses: BigWigsMods/packager@v2
+        env:
+          CF_API_KEY: ${{ secrets.CF_API_KEY }}
+          WAGO_API_TOKEN: ${{ secrets.WAGO_API_TOKEN }}
+          GITHUB_OAUTH: ${{ secrets.GITHUB_TOKEN }}
