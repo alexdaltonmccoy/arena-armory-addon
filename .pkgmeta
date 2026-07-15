@@ -12,5 +12,6 @@ ignore:
   - scripts
   - dist
   - README.md
+  - DEVELOPMENT.md
 
 enable-toc-creation: no
