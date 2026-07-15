@@ -169,6 +169,33 @@ local options = {
                 },
             },
         },
+        website = {
+            type = "group", order = 18, name = "Website",
+            args = {
+                about = {
+                    type = "description", order = 1, fontSize = "medium",
+                    name = "Your recorded matches sync to arenaarmory.com via the desktop app: winrates by comp, map, and bracket, per-match scoreboards, and event timelines. Look up any character's public arena history, gear, and talents.\n",
+                },
+                open = {
+                    type = "execute", order = 2, name = "arenaarmory.com",
+                    desc = "Shows a copyable link to the website.",
+                    func = function() AA.ShowCopyDialog(AA.SITE_URL, "arenaarmory.com") end,
+                },
+                matches = {
+                    type = "execute", order = 3, name = "My match history",
+                    desc = "Shows a copyable link to your match history page.",
+                    func = function() AA.ShowCopyDialog(AA.SITE_URL .. "/matches", "Your matches on arenaarmory.com") end,
+                },
+                lookup = {
+                    type = "input", order = 4, name = "Look up a character",
+                    desc = "Name or Name-Realm. Builds an armory link for any player (also: shift-click an enemy frame, or /aa lookup).",
+                    get = function() return "" end,
+                    set = function(_, v)
+                        if v and v:trim() ~= "" then AA.LookupName(v:trim()) end
+                    end,
+                },
+            },
+        },
     },
 }
 
@@ -176,15 +203,27 @@ AceConfig:RegisterOptionsTable("ArenaArmory", options)
 AceConfigDialog:SetDefaultSize("ArenaArmory", 640, 520)
 
 addon:RegisterChatCommand("aa", function(input)
-    input = (input or ""):lower():trim()
-    if input == "test" then
+    input = (input or ""):trim()
+    local command, rest = input:match("^(%S*)%s*(.-)$")
+    command = (command or ""):lower()
+    if command == "test" then
         AA.TestMode:Toggle()
-    elseif input == "lock" then
+    elseif command == "lock" then
         AA.db.profile.locked = not AA.db.profile.locked
         AA.Frames:UpdateLockState()
         addon:Print(AA.db.profile.locked and "Frames locked." or "Frames unlocked - drag the green anchor.")
-    elseif input == "matches" then
+    elseif command == "matches" then
         addon:Print(("Matches stored: %d"):format(AA.Recorder:GetMatchCount()))
+    elseif command == "web" then
+        AA.ShowCopyDialog(AA.SITE_URL, "arenaarmory.com")
+    elseif command == "lookup" then
+        if rest ~= "" then
+            AA.LookupName(rest)
+        elseif UnitExists("target") and UnitIsPlayer("target") then
+            AA.LookupUnit("target")
+        else
+            addon:Print("Usage: /aa lookup Name (or Name-Realm), or target a player first.")
+        end
     else
         AceConfigDialog:Open("ArenaArmory")
     end

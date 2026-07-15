@@ -349,8 +349,9 @@ function Recorder:Finalize(winner)
     current.bracket = math.max(current.bracket or 1, #current.team, #enemies)
 
     table.insert(ArenaArmoryMatches.matches, current)
-    addon:Print(("Match recorded: %s (%s). %d matches stored.")
-        :format(current.map or "?", current.result or "?", #ArenaArmoryMatches.matches))
+    addon:Print(("Match recorded: %s (%s). %d matches stored. View your history at %s")
+        :format(current.map or "?", current.result or "?", #ArenaArmoryMatches.matches,
+            AA.MatchesChatLink and AA.MatchesChatLink() or "arenaarmory.com"))
     current = nil
 end
 

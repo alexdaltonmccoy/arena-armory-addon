@@ -35,6 +35,16 @@ local function SavePosition()
     pos.point, pos.relativePoint, pos.x, pos.y = point, relativePoint, x, y
 end
 
+-- Idempotent stop: OnDragStop is not always delivered (mouse released over
+-- another frame, lock toggled mid-drag, frame hidden), which left the anchor
+-- glued to the cursor. Every stop path funnels through here.
+local function StopMovingAnchor()
+    if not anchor or not anchor.isMoving then return end
+    anchor.isMoving = false
+    anchor:StopMovingOrSizing()
+    SavePosition()
+end
+
 local function CreateAnchor()
     anchor = CreateFrame("Frame", "ArenaArmoryAnchor", UIParent)
     anchor:SetSize(220, 20)
@@ -43,12 +53,14 @@ local function CreateAnchor()
     anchor:EnableMouse(true)
     anchor:RegisterForDrag("LeftButton")
     anchor:SetScript("OnDragStart", function(self)
-        if not AA.db.profile.locked then self:StartMoving() end
+        if not AA.db.profile.locked then
+            self.isMoving = true
+            self:StartMoving()
+        end
     end)
-    anchor:SetScript("OnDragStop", function(self)
-        self:StopMovingOrSizing()
-        SavePosition()
-    end)
+    anchor:SetScript("OnDragStop", StopMovingAnchor)
+    anchor:SetScript("OnMouseUp", StopMovingAnchor)
+    anchor:SetScript("OnHide", StopMovingAnchor)
 
     anchor.bg = anchor:CreateTexture(nil, "BACKGROUND")
     anchor.bg:SetAllPoints()
@@ -237,6 +249,14 @@ local function CreateUnitFrame(i)
     f.secure:SetAttribute("type2", "focus")
     f.secure:RegisterForClicks("AnyUp")
 
+    -- Shift-left-click pops the arenaarmory.com lookup for this opponent.
+    -- Insecure post-hook: doesn't interfere with the secure targeting action.
+    f.secure:HookScript("OnClick", function(_, button)
+        if button == "LeftButton" and IsShiftKeyDown() and AA.LookupUnit then
+            AA.LookupUnit(unit)
+        end
+    end)
+
     Frames:ApplyStyle(f)
     f:Hide()
     return f
@@ -317,6 +337,7 @@ end
 
 function Frames:UpdateLockState()
     if AA.db.profile.locked then
+        StopMovingAnchor()
         anchor.bg:Hide()
         anchor.label:Hide()
         anchor:EnableMouse(false)
