@@ -103,9 +103,13 @@ function Recorder:SnapshotFriendlyTeam()
         local unit = "party" .. i
         if UnitExists(unit) then
             local _, classToken = UnitClass(unit)
+            local name = AA.StripRealm(UnitName(unit))
             table.insert(current.team, {
-                name = AA.StripRealm(UnitName(unit)),
+                name = name,
                 class = classToken,
+                -- Teammate specs come from SpecDetection's friendly tracking
+                -- (signature spells/buffs); re-snapshotted at match end.
+                spec = name and AA.friendlySpecs and AA.friendlySpecs[name] or nil,
             })
         end
     end
@@ -285,10 +289,15 @@ end
 
 function Recorder:CollectRatings()
     if not GetBattlefieldTeamInfo then return nil end
-    local ratings = {}
+    local ratings
     for teamIndex = 0, 1 do
         local teamName, oldRating, newRating, teamRating = GetBattlefieldTeamInfo(teamIndex)
-        if teamName or oldRating then
+        -- Skirmishes report zeros/empty across the board; store nothing so
+        -- consumers can tell "unrated" apart from "rated at 0".
+        local meaningful = (oldRating and oldRating > 0) or (newRating and newRating > 0)
+            or (teamRating and teamRating > 0) or (teamName and teamName ~= "")
+        if meaningful then
+            ratings = ratings or {}
             ratings[teamIndex] = {
                 name = teamName,
                 oldRating = oldRating,

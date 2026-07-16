@@ -241,6 +241,8 @@ function Analytics:Build()
                             pr = { w = 0, l = 0, name = p.name, class = p.class }
                             stats.partners[p.name] = pr
                         end
+                        -- Chronological iteration: ends at their latest known spec.
+                        if p.spec then pr.spec = p.spec end
                         Tally(pr, won)
                     end
                 end
@@ -565,7 +567,7 @@ function Analytics:Populate()
                 local pr = partners[i]
                 Put(0, COL_TEAMS, "  " .. Record(pr.w, pr.l))
                 Put(COL_TEAMS, PANEL_WIDTH - PAD * 2 - COL_TEAMS,
-                    ("%s %s%s|r"):format(ClassIconEscape(pr.class, ICON), ClassColorCode(pr.class), pr.name))
+                    ("%s %s%s|r"):format(PlayerIconEscape(pr.class, pr.spec, ICON), ClassColorCode(pr.class), pr.name))
                 NextLine(ROW_HEIGHT)
             end
         end

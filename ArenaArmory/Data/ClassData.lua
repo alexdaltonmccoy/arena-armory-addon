@@ -56,6 +56,7 @@ AA.SPEC_ICONS = {
     },
     SHAMAN = {
         ["Elemental"] = "Interface\\Icons\\Spell_Nature_Lightning",
+        ["Elemental Combat"] = "Interface\\Icons\\Spell_Nature_Lightning",
         ["Enhancement"] = "Interface\\Icons\\Spell_Nature_LightningShield",
         ["Restoration"] = "Interface\\Icons\\Spell_Nature_MagicImmunity",
     },
