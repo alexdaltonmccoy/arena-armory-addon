@@ -19,15 +19,14 @@ companion (`C:\dev\arena-armory-desktop`), and the web app / API
 - **Match analytics v1** - winrate donut + summary stats, comp winrate
   tables with guide links, partner winrates, rating-over-time chart,
   per-match scoreboard and event timeline, per-character tabs on /matches.
+- **In-game analytics** - computed live from the local match store, so records
+  update the moment a game ends (no /reload or network needed): "You are 2-1
+  vs Rogue/Priest" on arena entry, post-match record summary in chat, and a
+  `/aa stats` panel with per-bracket records, recent matches with rating
+  deltas, vs-comp and partner records.
 
 ## Next up
 
-- **In-game analytics** - surface arenaarmory.com analytics inside the addon:
-  winrate vs the comp you just queued into, partner winrates, rating trend,
-  "you beat this team 2-1 before". The WoW sandbox has no network access, so
-  the desktop app writes a stats digest into a SavedVariables file the addon
-  reads on login//reload (reverse of the match-upload pipeline). Show it on
-  arena entry (opponent comp winrate) and via a `/aa stats` panel.
 - **Suggestions / coaching from analytics** - data-driven tips on the site,
   e.g. "your winrate vs RMP drops 20% when the first trinket is before 0:30".
 - **Deeper per-match stats** - interrupt/juke accuracy, CC chains, target

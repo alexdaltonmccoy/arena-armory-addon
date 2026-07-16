@@ -67,5 +67,11 @@ AA.defaults = {
         recorder = {
             enabled = true,
         },
+
+        analytics = {
+            enabled = true,
+            announceComp = true, -- "You are 2-1 vs Rogue/Priest" on arena entry
+            postMatch = true,    -- updated record in chat after each game
+        },
     },
 }

@@ -169,6 +169,25 @@ local options = {
                 },
             },
         },
+        analytics = {
+            type = "group", order = 17.5, name = "Analytics",
+            args = {
+                enabled = { type = "toggle", order = 1, name = "Enable in-game analytics" },
+                announceComp = {
+                    type = "toggle", order = 2, name = "Announce record vs comp", width = "full",
+                    desc = "When all opponents are identified, shows your win-loss record against that comp (e.g. \"You are 2-1 vs Rogue/Priest\").",
+                },
+                postMatch = {
+                    type = "toggle", order = 3, name = "Post-match summary", width = "full",
+                    desc = "After each recorded game, prints your updated record vs that comp and today's win-loss.",
+                },
+                open = {
+                    type = "execute", order = 4, name = "Open stats panel",
+                    desc = "Your records by bracket, recent matches with rating changes, comps, and partners. Also: /aa stats",
+                    func = function() AA.Analytics:Toggle() end,
+                },
+            },
+        },
         website = {
             type = "group", order = 18, name = "Website",
             args = {
@@ -214,6 +233,8 @@ addon:RegisterChatCommand("aa", function(input)
         addon:Print(AA.db.profile.locked and "Frames locked." or "Frames unlocked - drag the green anchor.")
     elseif command == "matches" then
         addon:Print(("Matches stored: %d"):format(AA.Recorder:GetMatchCount()))
+    elseif command == "stats" then
+        AA.Analytics:Toggle()
     elseif command == "web" then
         AA.ShowCopyDialog(AA.SITE_URL, "arenaarmory.com")
     elseif command == "lookup" then

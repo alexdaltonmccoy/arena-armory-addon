@@ -25,5 +25,6 @@ Modules\SpecDetection.lua
 Modules\Announcer.lua
 Modules\WebLink.lua
 Modules\Recorder.lua
+Modules\Analytics.lua
 Modules\TestMode.lua
 Core\Options.lua

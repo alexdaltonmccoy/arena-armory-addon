@@ -33,6 +33,7 @@ from the git tag (see Releasing below).
 | `/aa test` | Toggle test mode (fake opponents for layout work) |
 | `/aa lock` | Lock/unlock the drag anchor |
 | `/aa matches` | Print stored match count |
+| `/aa stats` | Toggle the in-game stats panel (per-bracket records, recent matches with rating deltas, vs-comp and partner records). Updates live as matches are recorded. |
 | `/aa web` | Copyable link to arenaarmory.com |
 | `/aa lookup Name[-Realm]` | Copyable armory link for a character (no arg: current target). Shift-click an enemy frame does the same. |
 

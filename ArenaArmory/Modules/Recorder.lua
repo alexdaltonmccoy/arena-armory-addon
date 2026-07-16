@@ -352,6 +352,9 @@ function Recorder:Finalize(winner)
     addon:Print(("Match recorded: %s (%s). %d matches stored. View your history at %s")
         :format(current.map or "?", current.result or "?", #ArenaArmoryMatches.matches,
             AA.MatchesChatLink and AA.MatchesChatLink() or "arenaarmory.com"))
+    -- Analytics (and anything else) can react to the finished match while its
+    -- data is fresh in memory - no /reload needed.
+    self:SendMessage("AA_MATCH_RECORDED", current)
     current = nil
 end
 
