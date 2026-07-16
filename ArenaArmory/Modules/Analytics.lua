@@ -386,6 +386,27 @@ function Analytics:OnMatchRecorded(_, match)
     end
 end
 
+-- Ratings trickle in after the record is first stored (see the Recorder's
+-- RetryRatings); announce them once they land and refresh the open panel.
+function Analytics:OnMatchUpdated(_, match)
+    local cfg = AA.db.profile.analytics
+    if cfg.enabled and cfg.postMatch then
+        local nums = MatchNumbers(match)
+        if nums and nums.rating then
+            local mmr = ""
+            if nums.mmr or nums.enemyMmr then
+                mmr = ("  ·  MMR %s vs %s"):format(
+                    nums.mmr and tostring(nums.mmr) or "?",
+                    nums.enemyMmr and tostring(nums.enemyMmr) or "?")
+            end
+            addon:Print(("Rating: %d%s%s"):format(nums.rating, FmtDelta(nums.delta), mmr))
+        end
+    end
+    if self.panel and self.panel:IsShown() then
+        self:Populate()
+    end
+end
+
 -------------------------------------------------------------------------------
 -- Stats panel (/aa stats)
 -------------------------------------------------------------------------------
@@ -638,4 +659,5 @@ function Analytics:OnEnable()
     self:RegisterMessage("AA_ARENA_JOINED", "OnArenaJoined")
     self:RegisterMessage("AA_OPPONENT_UPDATE", "OnOpponentUpdate")
     self:RegisterMessage("AA_MATCH_RECORDED", "OnMatchRecorded")
+    self:RegisterMessage("AA_MATCH_UPDATED", "OnMatchUpdated")
 end

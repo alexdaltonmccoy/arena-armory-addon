@@ -288,21 +288,29 @@ function Recorder:CollectScoreboard()
 end
 
 function Recorder:CollectRatings()
-    if not GetBattlefieldTeamInfo then return nil end
     local ratings
     for teamIndex = 0, 1 do
-        local teamName, oldRating, newRating, teamRating = GetBattlefieldTeamInfo(teamIndex)
+        local teamName, oldRating, newRating, mmr
+        -- 2.5.6 ships modern UI code; prefer the modern API when present.
+        if C_PvP and C_PvP.GetTeamInfo then
+            local info = C_PvP.GetTeamInfo(teamIndex)
+            if info then
+                teamName, oldRating, newRating, mmr = info.name, info.rating, info.ratingNew, info.ratingMMR
+            end
+        elseif GetBattlefieldTeamInfo then
+            teamName, oldRating, newRating, mmr = GetBattlefieldTeamInfo(teamIndex)
+        end
         -- Skirmishes report zeros/empty across the board; store nothing so
         -- consumers can tell "unrated" apart from "rated at 0".
         local meaningful = (oldRating and oldRating > 0) or (newRating and newRating > 0)
-            or (teamRating and teamRating > 0) or (teamName and teamName ~= "")
+            or (mmr and mmr > 0) or (teamName and teamName ~= "")
         if meaningful then
             ratings = ratings or {}
             ratings[teamIndex] = {
                 name = teamName,
                 oldRating = oldRating,
                 newRating = newRating,
-                rating = teamRating,
+                rating = mmr,
             }
         end
     end
@@ -364,7 +372,51 @@ function Recorder:Finalize(winner)
     -- Analytics (and anything else) can react to the finished match while its
     -- data is fresh in memory - no /reload needed.
     self:SendMessage("AA_MATCH_RECORDED", current)
+
+    -- Ratings (and final scoreboard numbers) aren't available until
+    -- UPDATE_BATTLEFIELD_SCORE fires after the match ends - often a beat
+    -- AFTER the winner is known, which is when we finalize. Keep patching
+    -- the stored record while the scoreboard is still up.
+    if not current.ratings then
+        self.lastRecord = current
+        self.ratingRetries = 0
+        if not self.ratingTimer then
+            self.ratingTimer = self:ScheduleRepeatingTimer("RetryRatings", 1)
+        end
+    end
+
     current = nil
+end
+
+function Recorder:RetryRatings()
+    local record = self.lastRecord
+    if not record then
+        self:StopRatingRetries()
+        return
+    end
+    self.ratingRetries = (self.ratingRetries or 0) + 1
+
+    local ratings = self:CollectRatings()
+    if ratings then
+        record.ratings = ratings
+        -- Damage/healing totals also settle with the final score update.
+        record.scoreboard = self:CollectScoreboard() or record.scoreboard
+        self:StopRatingRetries()
+        self:SendMessage("AA_MATCH_UPDATED", record)
+        return
+    end
+    -- Skirmish (never any ratings) or we left the map: stop after ~20s.
+    if self.ratingRetries >= 20 then
+        self:StopRatingRetries()
+    end
+end
+
+function Recorder:StopRatingRetries()
+    if self.ratingTimer then
+        self:CancelTimer(self.ratingTimer)
+        self.ratingTimer = nil
+    end
+    self.lastRecord = nil
 end
 
 function Recorder:OnArenaLeft()
