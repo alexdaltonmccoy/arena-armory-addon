@@ -231,6 +231,17 @@ function Analytics:Build()
                     stats.comps[key] = c
                 end
                 Tally(c, won)
+                -- Comps group by class, but icons render specs: keep the
+                -- roster with the most detected specs (later matches win
+                -- ties, so icons reflect the latest sighting).
+                local known = 0
+                for _, e in ipairs(m.enemyTeam) do
+                    if e.spec then known = known + 1 end
+                end
+                if known >= (c.specKnown or -1) then
+                    c.specKnown = known
+                    c.team = m.enemyTeam
+                end
             end
 
             if type(m.team) == "table" then
@@ -560,8 +571,22 @@ function Analytics:Populate()
             for i = 1, math.min(#comps, MAX_COMPS) do
                 local c = comps[i]
                 local icons = {}
-                for token in c.key:gmatch("[^+]+") do
-                    table.insert(icons, ClassIconEscape(token, ICON))
+                if c.team then
+                    -- Sort like CompLabel (by class token) so icons line up
+                    -- with the names; spec icon when detected, class if not.
+                    local roster = {}
+                    for _, e in ipairs(c.team) do table.insert(roster, e) end
+                    table.sort(roster, function(a, b)
+                        if a.class ~= b.class then return (a.class or "") < (b.class or "") end
+                        return (a.spec or "") < (b.spec or "")
+                    end)
+                    for _, e in ipairs(roster) do
+                        table.insert(icons, PlayerIconEscape(e.class, e.spec, ICON))
+                    end
+                else
+                    for token in c.key:gmatch("[^+]+") do
+                        table.insert(icons, ClassIconEscape(token, ICON))
+                    end
                 end
                 Put(0, COL_TEAMS, "  " .. Record(c.w, c.l))
                 Put(COL_TEAMS, CONTENT_WIDTH - COL_TEAMS,
