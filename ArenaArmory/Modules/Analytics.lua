@@ -28,6 +28,56 @@ local function ClassColorCode(token)
     return "|cffffffff"
 end
 
+-------------------------------------------------------------------------------
+-- Inline icon escapes (|T...|t renders textures inside FontStrings)
+-------------------------------------------------------------------------------
+
+local CLASS_SHEET = "Interface\\GLUES\\CHARACTERCREATE\\UI-CHARACTERCREATE-CLASSES"
+
+local function ClassIconEscape(token, size)
+    local tc = token and AA.CLASS_ICON_TCOORDS[token]
+    if not tc then
+        return ("|TInterface\\Icons\\INV_Misc_QuestionMark:%d:%d:0:0:64:64:5:59:5:59|t")
+            :format(size, size)
+    end
+    return ("|T%s:%d:%d:0:0:256:256:%d:%d:%d:%d|t"):format(
+        CLASS_SHEET, size, size,
+        tc[1] * 256, tc[2] * 256, tc[3] * 256, tc[4] * 256)
+end
+
+-- Spec talent-tree icon when the spec was detected, class icon otherwise.
+local function PlayerIconEscape(class, spec, size)
+    local icons = class and AA.SPEC_ICONS and AA.SPEC_ICONS[class]
+    local path = icons and spec and icons[spec]
+    if path then
+        -- 5:59 crops the baked-in icon border.
+        return ("|T%s:%d:%d:0:0:64:64:5:59:5:59|t"):format(path, size, size)
+    end
+    return ClassIconEscape(class, size)
+end
+
+local function TeamStrip(team, size)
+    if type(team) ~= "table" or #team == 0 then return GRAY .. "?" .. "|r" end
+    local parts = {}
+    for _, p in ipairs(team) do
+        table.insert(parts, PlayerIconEscape(p.class, p.spec, size))
+    end
+    return table.concat(parts, "")
+end
+
+local MAP_ABBREV = {
+    ["Ring of Trials"] = "NA", ["Nagrand Arena"] = "NA",
+    ["Circle of Blood"] = "BE", ["Blade's Edge Arena"] = "BE",
+    ["Ruins of Lordaeron"] = "RoL",
+}
+
+local function MapAbbrev(map)
+    if not map then return "?" end
+    if MAP_ABBREV[map] then return MAP_ABBREV[map] end
+    local initials = map:gsub("[^%u]", "")
+    return initials ~= "" and initials:sub(1, 3) or map:sub(1, 3)
+end
+
 local function LocClass(token)
     return (LOCALIZED_CLASS_NAMES_MALE and LOCALIZED_CLASS_NAMES_MALE[token]) or token or "?"
 end
@@ -107,6 +157,25 @@ local function RatingDelta(m)
     local oldR = tonumber(r.oldRating)
     if not newR or newR <= 0 then return nil, nil end
     return newR, oldR and (newR - oldR) or nil
+end
+
+-- Rating after the match, its change, and both teams' matchmaking values
+-- (GetBattlefieldTeamInfo's 4th return, the scoreboard "Matchmaking Value").
+local function MatchNumbers(m)
+    local side = OurSide(m)
+    if side == nil or type(m.ratings) ~= "table" then return nil end
+    local ours = m.ratings[side]
+    local theirs = m.ratings[1 - side]
+    if type(ours) ~= "table" then return nil end
+    local rating, delta = RatingDelta(m)
+    local mmr = tonumber(ours.rating)
+    local enemyMmr = type(theirs) == "table" and tonumber(theirs.rating) or nil
+    return {
+        rating = rating,
+        delta = delta,
+        mmr = mmr and mmr > 0 and mmr or nil,
+        enemyMmr = enemyMmr and enemyMmr > 0 and enemyMmr or nil,
+    }
 end
 
 local function Tally(bucket, won)
@@ -308,9 +377,20 @@ end
 -- Stats panel (/aa stats)
 -------------------------------------------------------------------------------
 
-local PANEL_WIDTH = 500
+local PANEL_WIDTH = 620
 local PAD = 16
 local LINE_HEIGHT = 15
+local ICON = 15          -- team strip icon size
+local ROW_HEIGHT = 19    -- recent-match rows (taller for the icons)
+
+-- Recent matches column x-offsets (relative to PAD).
+local COL_RESULT  = 0
+local COL_DATE    = 18
+local COL_MAP     = 60
+local COL_TEAMS   = 98
+local COL_RATING  = 330
+local COL_MMR     = 412
+local COL_DUR     = 540
 
 local MAX_RECENT = 8
 local MAX_COMPS = 8
@@ -364,23 +444,32 @@ function Analytics:Populate()
     local n = 0
     local y = -40
 
-    local function Add(text, header)
+    -- Places text at a column offset on the current line without advancing.
+    local function Put(x, width, text, font)
         n = n + 1
         local fs = p.lines[n]
         if not fs then
             fs = p:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
             fs:SetJustifyH("LEFT")
-            fs:SetWidth(PANEL_WIDTH - PAD * 2)
             fs:SetWordWrap(false)
             p.lines[n] = fs
         end
-        fs:SetFontObject(header and "GameFontNormal" or "GameFontHighlightSmall")
-        if header then y = y - 7 end
+        fs:SetFontObject(font or "GameFontHighlightSmall")
         fs:ClearAllPoints()
-        fs:SetPoint("TOPLEFT", PAD, y)
+        fs:SetPoint("TOPLEFT", PAD + x, y)
+        fs:SetWidth(width)
         fs:SetText(text)
         fs:Show()
-        y = y - LINE_HEIGHT
+    end
+
+    local function NextLine(h)
+        y = y - (h or LINE_HEIGHT)
+    end
+
+    local function Add(text, header)
+        if header then y = y - 7 end
+        Put(0, PANEL_WIDTH - PAD * 2, text, header and "GameFontNormal" or nil)
+        NextLine()
     end
 
     local me = AA.StripRealm(UnitName("player"))
@@ -405,20 +494,41 @@ function Analytics:Populate()
 
         if #s.recent > 0 then
             Add(GOLD .. "Recent matches" .. "|r", true)
+            -- Column headers
+            Put(COL_MAP, COL_TEAMS - COL_MAP, GRAY .. "Map|r")
+            Put(COL_TEAMS, COL_RATING - COL_TEAMS, GRAY .. "You  vs  enemy|r")
+            Put(COL_RATING, COL_MMR - COL_RATING, GRAY .. "Rating|r")
+            Put(COL_MMR, COL_DUR - COL_MMR, GRAY .. "MMR us/them|r")
+            Put(COL_DUR, PANEL_WIDTH - PAD * 2 - COL_DUR, GRAY .. "Time|r")
+            NextLine()
+
             for i = 1, math.min(#s.recent, MAX_RECENT) do
                 local m = s.recent[i]
                 local letter = m.result == "win" and (GREEN .. "W|r")
                     or m.result == "loss" and (RED .. "L|r")
                     or (GRAY .. "-|r")
-                local key = MatchCompKey(m)
-                local _, delta = RatingDelta(m)
-                Add(("  %s  %s  %s  vs %s  %s%s"):format(
-                    letter,
-                    date("%m/%d", m.startedAt or 0),
-                    m.bracket and (m.bracket .. "v" .. m.bracket) or "?",
-                    key and CompLabel(key) or (GRAY .. "unknown comp|r"),
-                    GRAY .. FmtDuration(m.durationSeconds) .. "|r",
-                    FmtDelta(delta)))
+                local nums = MatchNumbers(m)
+
+                local ratingText = GRAY .. "-|r"
+                if nums and nums.rating then
+                    ratingText = ("%d%s"):format(nums.rating, FmtDelta(nums.delta))
+                end
+                local mmrText = GRAY .. "-|r"
+                if nums and (nums.mmr or nums.enemyMmr) then
+                    mmrText = ("%s %s/|r %s"):format(
+                        nums.mmr and tostring(nums.mmr) or "?",
+                        GRAY, nums.enemyMmr and tostring(nums.enemyMmr) or "?")
+                end
+
+                Put(COL_RESULT, COL_DATE - COL_RESULT, letter)
+                Put(COL_DATE, COL_MAP - COL_DATE, GRAY .. date("%m/%d", m.startedAt or 0) .. "|r")
+                Put(COL_MAP, COL_TEAMS - COL_MAP, MapAbbrev(m.map))
+                Put(COL_TEAMS, COL_RATING - COL_TEAMS,
+                    ("%s %svs|r %s"):format(TeamStrip(m.team, ICON), GRAY, TeamStrip(m.enemyTeam, ICON)))
+                Put(COL_RATING, COL_MMR - COL_RATING, ratingText)
+                Put(COL_MMR, COL_DUR - COL_MMR, mmrText)
+                Put(COL_DUR, PANEL_WIDTH - PAD * 2 - COL_DUR, GRAY .. FmtDuration(m.durationSeconds) .. "|r")
+                NextLine(ROW_HEIGHT)
             end
         end
 
@@ -432,7 +542,14 @@ function Analytics:Populate()
             Add(GOLD .. "Vs comps" .. "|r", true)
             for i = 1, math.min(#comps, MAX_COMPS) do
                 local c = comps[i]
-                Add(("  %s  %s"):format(Record(c.w, c.l), CompLabel(c.key)))
+                local icons = {}
+                for token in c.key:gmatch("[^+]+") do
+                    table.insert(icons, ClassIconEscape(token, ICON))
+                end
+                Put(0, COL_TEAMS, "  " .. Record(c.w, c.l))
+                Put(COL_TEAMS, PANEL_WIDTH - PAD * 2 - COL_TEAMS,
+                    table.concat(icons, "") .. "  " .. CompLabel(c.key))
+                NextLine(ROW_HEIGHT)
             end
         end
 
@@ -446,8 +563,10 @@ function Analytics:Populate()
             Add(GOLD .. "With partners" .. "|r", true)
             for i = 1, math.min(#partners, MAX_PARTNERS) do
                 local pr = partners[i]
-                Add(("  %s  %s%s|r"):format(
-                    Record(pr.w, pr.l), ClassColorCode(pr.class), pr.name))
+                Put(0, COL_TEAMS, "  " .. Record(pr.w, pr.l))
+                Put(COL_TEAMS, PANEL_WIDTH - PAD * 2 - COL_TEAMS,
+                    ("%s %s%s|r"):format(ClassIconEscape(pr.class, ICON), ClassColorCode(pr.class), pr.name))
+                NextLine(ROW_HEIGHT)
             end
         end
     end
