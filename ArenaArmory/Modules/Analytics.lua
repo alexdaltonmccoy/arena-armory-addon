@@ -379,31 +379,35 @@ end
 -- Stats panel (/aa stats)
 -------------------------------------------------------------------------------
 
-local PANEL_WIDTH = 620
+local PANEL_WIDTH = 760
+local PANEL_HEIGHT = 620
 local PAD = 16
-local LINE_HEIGHT = 15
-local ICON = 15          -- team strip icon size
-local ROW_HEIGHT = 19    -- recent-match rows (taller for the icons)
+local SCROLLBAR = 26
+local CONTENT_WIDTH = PANEL_WIDTH - PAD * 2 - SCROLLBAR
+local LINE_HEIGHT = 20
+local ICON = 22          -- team strip icon size
+local ROW_HEIGHT = 27    -- recent-match rows (taller for the icons)
 
--- Recent matches column x-offsets (relative to PAD).
+-- Recent matches column x-offsets (relative to the scroll content).
 local COL_RESULT  = 0
-local COL_DATE    = 18
-local COL_MAP     = 60
-local COL_TEAMS   = 98
-local COL_RATING  = 330
-local COL_MMR     = 412
-local COL_DUR     = 540
+local COL_DATE    = 24
+local COL_MAP     = 74
+local COL_TEAMS   = 120
+local COL_RATING  = 430
+local COL_MMR     = 520
+local COL_DUR     = 650
 
-local MAX_RECENT = 8
-local MAX_COMPS = 8
-local MAX_PARTNERS = 6
+-- Scrolling means these are comfort caps, not space constraints.
+local MAX_RECENT = 25
+local MAX_COMPS = 15
+local MAX_PARTNERS = 10
 
 function Analytics:EnsurePanel()
     if self.panel then return self.panel end
 
     local p = CreateFrame("Frame", "ArenaArmoryStatsPanel", UIParent,
         BackdropTemplateMixin and "BackdropTemplate" or nil)
-    p:SetSize(PANEL_WIDTH, 400)
+    p:SetSize(PANEL_WIDTH, PANEL_HEIGHT)
     p:SetPoint("CENTER")
     p:SetFrameStrata("HIGH")
     p:SetMovable(true)
@@ -422,12 +426,23 @@ function Analytics:EnsurePanel()
         p:SetBackdropBorderColor(0.9, 0.78, 0.49, 0.35)
     end
 
-    p.title = p:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
-    p.title:SetPoint("TOPLEFT", PAD, -12)
+    p.title = p:CreateFontString(nil, "OVERLAY", "GameFontNormalHuge")
+    p.title:SetPoint("TOPLEFT", PAD, -14)
     p.title:SetText(GOLD .. "Arena Armory|r Stats")
 
     local close = CreateFrame("Button", nil, p, "UIPanelCloseButton")
     close:SetPoint("TOPRIGHT", -4, -4)
+
+    -- Content lives in a scroll frame (mouse wheel works out of the box) so
+    -- long histories aren't squeezed into a fixed height.
+    local scroll = CreateFrame("ScrollFrame", "ArenaArmoryStatsScroll", p, "UIPanelScrollFrameTemplate")
+    scroll:SetPoint("TOPLEFT", PAD, -48)
+    scroll:SetPoint("BOTTOMRIGHT", -SCROLLBAR, PAD)
+
+    local content = CreateFrame("Frame", nil, scroll)
+    content:SetSize(CONTENT_WIDTH, 100)
+    scroll:SetScrollChild(content)
+    p.content = content
 
     p.lines = {}
 
@@ -444,21 +459,21 @@ function Analytics:Populate()
 
     for _, fs in ipairs(p.lines) do fs:Hide() end
     local n = 0
-    local y = -40
+    local y = 0
 
     -- Places text at a column offset on the current line without advancing.
     local function Put(x, width, text, font)
         n = n + 1
         local fs = p.lines[n]
         if not fs then
-            fs = p:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+            fs = p.content:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
             fs:SetJustifyH("LEFT")
             fs:SetWordWrap(false)
             p.lines[n] = fs
         end
-        fs:SetFontObject(font or "GameFontHighlightSmall")
+        fs:SetFontObject(font or "GameFontHighlight")
         fs:ClearAllPoints()
-        fs:SetPoint("TOPLEFT", PAD + x, y)
+        fs:SetPoint("TOPLEFT", p.content, "TOPLEFT", x, y)
         fs:SetWidth(width)
         fs:SetText(text)
         fs:Show()
@@ -469,9 +484,9 @@ function Analytics:Populate()
     end
 
     local function Add(text, header)
-        if header then y = y - 7 end
-        Put(0, PANEL_WIDTH - PAD * 2, text, header and "GameFontNormal" or nil)
-        NextLine()
+        if header then y = y - 10 end
+        Put(0, CONTENT_WIDTH, text, header and "GameFontNormalLarge" or nil)
+        NextLine(header and (LINE_HEIGHT + 4) or nil)
     end
 
     local me = AA.StripRealm(UnitName("player"))
@@ -501,7 +516,7 @@ function Analytics:Populate()
             Put(COL_TEAMS, COL_RATING - COL_TEAMS, GRAY .. "You  vs  enemy|r")
             Put(COL_RATING, COL_MMR - COL_RATING, GRAY .. "Rating|r")
             Put(COL_MMR, COL_DUR - COL_MMR, GRAY .. "MMR us/them|r")
-            Put(COL_DUR, PANEL_WIDTH - PAD * 2 - COL_DUR, GRAY .. "Time|r")
+            Put(COL_DUR, CONTENT_WIDTH - COL_DUR, GRAY .. "Time|r")
             NextLine()
 
             for i = 1, math.min(#s.recent, MAX_RECENT) do
@@ -529,7 +544,7 @@ function Analytics:Populate()
                     ("%s %svs|r %s"):format(TeamStrip(m.team, ICON), GRAY, TeamStrip(m.enemyTeam, ICON)))
                 Put(COL_RATING, COL_MMR - COL_RATING, ratingText)
                 Put(COL_MMR, COL_DUR - COL_MMR, mmrText)
-                Put(COL_DUR, PANEL_WIDTH - PAD * 2 - COL_DUR, GRAY .. FmtDuration(m.durationSeconds) .. "|r")
+                Put(COL_DUR, CONTENT_WIDTH - COL_DUR, GRAY .. FmtDuration(m.durationSeconds) .. "|r")
                 NextLine(ROW_HEIGHT)
             end
         end
@@ -549,7 +564,7 @@ function Analytics:Populate()
                     table.insert(icons, ClassIconEscape(token, ICON))
                 end
                 Put(0, COL_TEAMS, "  " .. Record(c.w, c.l))
-                Put(COL_TEAMS, PANEL_WIDTH - PAD * 2 - COL_TEAMS,
+                Put(COL_TEAMS, CONTENT_WIDTH - COL_TEAMS,
                     table.concat(icons, "") .. "  " .. CompLabel(c.key))
                 NextLine(ROW_HEIGHT)
             end
@@ -566,7 +581,7 @@ function Analytics:Populate()
             for i = 1, math.min(#partners, MAX_PARTNERS) do
                 local pr = partners[i]
                 Put(0, COL_TEAMS, "  " .. Record(pr.w, pr.l))
-                Put(COL_TEAMS, PANEL_WIDTH - PAD * 2 - COL_TEAMS,
+                Put(COL_TEAMS, CONTENT_WIDTH - COL_TEAMS,
                     ("%s %s%s|r"):format(PlayerIconEscape(pr.class, pr.spec, ICON), ClassColorCode(pr.class), pr.name))
                 NextLine(ROW_HEIGHT)
             end
@@ -575,7 +590,9 @@ function Analytics:Populate()
 
     Add(GRAY .. "Full analytics, rating charts, and event timelines: arenaarmory.com" .. "|r", true)
 
-    p:SetHeight(-y + PAD)
+    p.content:SetHeight(-y + 10)
+    -- Shrink the window when there's little to show; scroll when there's a lot.
+    p:SetHeight(math.min(PANEL_HEIGHT, -y + 48 + PAD + 12))
 end
 
 function Analytics:Toggle()
