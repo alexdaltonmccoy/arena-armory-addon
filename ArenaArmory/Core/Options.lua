@@ -64,6 +64,27 @@ local options = {
                 powerBarHeight = {
                     type = "range", order = 9, name = "Power bar height",
                     min = 4, max = 24, step = 1,
+                    desc = "14+ recommended when the spec label or power text is shown on the bar.",
+                },
+                fontSize = {
+                    type = "range", order = 10, name = "Text size",
+                    min = 8, max = 16, step = 1,
+                    desc = "Base size for the name, spec, health, and power texts.",
+                },
+                healthTextMode = {
+                    type = "select", order = 11, name = "Health text",
+                    desc = "What to show on the right of the health bar.",
+                    values = { none = "Nothing", value = "Value", percent = "Percent", both = "Value (percent)" },
+                },
+                powerTextMode = {
+                    type = "select", order = 12, name = "Power text",
+                    desc = "What to show on the right of the power bar.",
+                    values = { none = "Nothing", value = "Value", percent = "Percent", both = "Value (percent)" },
+                },
+                specPosition = {
+                    type = "select", order = 13, name = "Spec label position",
+                    desc = "Detected enemy spec: on the power bar directly below the name, or on the right side of the health bar.",
+                    values = { power = "Power bar (below name)", health = "Health bar (right side)" },
                 },
             },
         },

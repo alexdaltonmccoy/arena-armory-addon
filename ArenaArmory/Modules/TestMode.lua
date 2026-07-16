@@ -11,16 +11,21 @@ local function ApplyTestData(i, opp)
     local f = AA.GetFrame(i)
     if not f then return end
 
+    local cfg = AA.db.profile.frames
     f.classToken = opp.class
     AA.Frames:SetFrameClass(f, opp.class)
-    f.nameText:SetText(AA.db.profile.frames.showNames and opp.name or "")
+    f.nameText:SetText(cfg.showNames and opp.name or "")
     f.specText:SetText(opp.spec)
+
+    -- Plausible TBC pools so the value/percent text modes preview correctly.
+    local hpMax, powerMax = 11000, 10500
     f.healthBar:SetValue(opp.health)
-    f.healthText:SetText(("%d%%"):format(opp.health * 100))
+    f.healthText:SetText(AA.FormatBarText(cfg.healthTextMode, opp.health * hpMax, hpMax))
 
     local pc = AA.POWER_COLORS[opp.powerType] or AA.POWER_COLORS.MANA
     f.powerBar:SetStatusBarColor(pc[1], pc[2], pc[3])
     f.powerBar:SetValue(opp.power)
+    f.powerText:SetText(AA.FormatBarText(cfg.powerTextMode, opp.power * powerMax, powerMax))
 
     f:Show()
 end

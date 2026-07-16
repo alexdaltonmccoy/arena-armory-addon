@@ -78,11 +78,14 @@ end
 -- Styling (Modern = flat Midnight-like, Classic = traditional WoW gloss)
 -------------------------------------------------------------------------------
 
-local function StyleFont(fontString, outline)
-    local font, size = fontString:GetFont()
+-- Outline + drop shadow in every style: bar colors range from white (priest)
+-- to dark blue (shaman), so unoutlined text is unreadable on half the classes.
+local function StyleFont(fontString, size)
+    local font = fontString:GetFont()
     if font then
-        fontString:SetFont(font, size, outline and "OUTLINE" or "")
-        if outline then fontString:SetShadowOffset(0, 0) end
+        fontString:SetFont(font, size, "OUTLINE")
+        fontString:SetShadowColor(0, 0, 0, 0.9)
+        fontString:SetShadowOffset(1, -1)
     end
 end
 
@@ -121,14 +124,37 @@ function Frames:ApplyStyle(f)
         f.healthBar.sheen:Hide()
     end
 
-    StyleFont(f.nameText, modern)
-    StyleFont(f.healthText, modern)
-    StyleFont(f.specText, modern)
-    StyleFont(f.castBar.text, modern)
+    local fontSize = AA.db.profile.frames.fontSize or 11
+    StyleFont(f.nameText, fontSize + 1)
+    StyleFont(f.healthText, fontSize)
+    StyleFont(f.specText, fontSize - 1)
+    StyleFont(f.powerText, fontSize - 1)
+    StyleFont(f.castBar.text, fontSize - 1)
+
+    self:ApplyTextLayout(f)
 
     -- Re-assert bar color for the new texture.
     if f.classToken then
         self:SetFrameClass(f, f.classToken)
+    end
+end
+
+-- Anchors the spec/health/power texts per config: spec either sits on the
+-- power bar directly below the name (Gladdy-style) or on the health bar's
+-- right; the health text centers vertically when it has the right side alone.
+function Frames:ApplyTextLayout(f)
+    local cfg = AA.db.profile.frames
+    local onPower = cfg.specPosition ~= "health" and cfg.showPowerBar
+    f.specText:ClearAllPoints()
+    f.healthText:ClearAllPoints()
+    if onPower then
+        f.specText:SetPoint("LEFT", f.powerBar, "LEFT", 4, 0)
+        f.specText:SetJustifyH("LEFT")
+        f.healthText:SetPoint("RIGHT", f.healthBar, "RIGHT", -4, 0)
+    else
+        f.specText:SetPoint("RIGHT", f.healthBar, "RIGHT", -4, 6)
+        f.specText:SetJustifyH("RIGHT")
+        f.healthText:SetPoint("RIGHT", f.healthBar, "RIGHT", -4, -6)
     end
 end
 
@@ -206,6 +232,11 @@ local function CreateUnitFrame(i)
     f.powerBar:SetMinMaxValues(0, 1)
     f.powerBar.bg = f.powerBar:CreateTexture(nil, "BACKGROUND")
     f.powerBar.bg:SetAllPoints()
+
+    f.powerText = f.powerBar:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+    f.powerText:SetPoint("RIGHT", f.powerBar, "RIGHT", -4, 0)
+    f.powerText:SetJustifyH("RIGHT")
+
     if not cfg.showPowerBar then f.powerBar:Hide() end
 
     -- Cast bar (below the frame body)
@@ -271,6 +302,7 @@ local function ApplyPlaceholder(f)
     f.nameText:SetText("Enemy " .. f.index)
     f.specText:SetText(AA.detectedSpecs and AA.detectedSpecs[f.index] or "")
     f.healthText:SetText("")
+    f.powerText:SetText("")
     f.healthBar:SetStatusBarColor(0.4, 0.4, 0.4)
     f.healthBar:SetValue(1)
     f.powerBar:SetValue(0)
@@ -284,6 +316,7 @@ local function ClearFrame(f)
     f.nameText:SetText("")
     f.specText:SetText("")
     f.healthText:SetText("")
+    f.powerText:SetText("")
     f.healthBar:SetValue(0)
     f.powerBar:SetValue(0)
     f.castBar:Hide()
@@ -316,6 +349,7 @@ function Frames:ApplySizes()
             f.castBar.endTime = nil
             f.castBar:Hide()
         end
+        self:ApplyTextLayout(f)
     end
     self:Layout()
 end
@@ -367,11 +401,20 @@ function Frames:SetFrameClass(f, classToken)
     end
 end
 
-local function FormatHealth(cur, max)
-    if max >= 1000 then
-        return ("%.1fk"):format(cur / 1000)
+local function Abbrev(v)
+    if v >= 1000 then
+        return ("%.1fk"):format(v / 1000)
     end
-    return tostring(cur)
+    return tostring(v)
+end
+
+-- "11.0k (99%)", "11.0k", "99%", or "" per the configured mode.
+function AA.FormatBarText(mode, cur, max)
+    if mode == "none" or not max or max <= 0 then return "" end
+    local pct = math.floor(cur / max * 100 + 0.5)
+    if mode == "value" then return Abbrev(cur) end
+    if mode == "percent" then return pct .. "%" end
+    return ("%s (%d%%)"):format(Abbrev(cur), pct)
 end
 
 function Frames:UpdateUnit(f)
@@ -411,19 +454,22 @@ function Frames:UpdateUnit(f)
         f.nameText:SetText("")
     end
 
+    local cfg = AA.db.profile.frames
+
     local hp, hpMax = UnitHealth(unit), UnitHealthMax(unit)
     if hpMax and hpMax > 0 then
         f.healthBar:SetValue(hp / hpMax)
-        f.healthText:SetText(FormatHealth(hp, hpMax))
+        f.healthText:SetText(AA.FormatBarText(cfg.healthTextMode, hp, hpMax))
     end
 
-    if AA.db.profile.frames.showPowerBar then
+    if cfg.showPowerBar then
         local power, powerMax = UnitPower(unit), UnitPowerMax(unit)
         local _, powerToken = UnitPowerType(unit)
         local pc = AA.POWER_COLORS[powerToken] or AA.POWER_COLORS.MANA
         f.powerBar:SetStatusBarColor(pc[1], pc[2], pc[3])
         if powerMax and powerMax > 0 then
             f.powerBar:SetValue(power / powerMax)
+            f.powerText:SetText(AA.FormatBarText(cfg.powerTextMode, power, powerMax))
         end
     end
 

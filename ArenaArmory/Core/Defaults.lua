@@ -18,7 +18,12 @@ AA.defaults = {
             classColoredHealth = true,
             showNames = true,
             showPowerBar = true,
-            powerBarHeight = 8,
+            -- Tall enough for the spec label + power value text.
+            powerBarHeight = 14,
+            fontSize = 11,
+            healthTextMode = "both",  -- "none" | "value" | "percent" | "both"
+            powerTextMode = "both",   -- "none" | "value" | "percent" | "both"
+            specPosition = "power",   -- "power" (below name) or "health" (right side)
         },
 
         castbar = {
