@@ -25,12 +25,19 @@ companion (`C:\dev\arena-armory-desktop`), and the web app / API
   `/aa stats` panel with per-bracket records, recent matches with rating
   deltas, vs-comp and partner records.
 
+## Shipped (continued)
+
+- **Coaching insights v1** - threshold-gated tips computed from the event
+  stream on the site (interrupt efficiency with juke detection, early trinket
+  force conversion, CC pressure in wins vs losses, match length profile,
+  first-blood conversion), plus per-match insight chips (trinket timing,
+  kicks landed/juked, longest CC chain). Addon v1.3.8 records every rank of
+  dedicated interrupt casts so attempts vs. lands is measurable.
+
 ## Next up
 
-- **Suggestions / coaching from analytics** - data-driven tips on the site,
-  e.g. "your winrate vs RMP drops 20% when the first trinket is before 0:30".
-- **Deeper per-match stats** - interrupt/juke accuracy, CC chains, target
-  swaps, damage/healing timelines from the event stream.
+- **Deeper per-match stats** - target swaps, damage/healing timelines from
+  the event stream; drill-down pages per matchup.
 
 ## Later
 
