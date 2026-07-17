@@ -481,6 +481,11 @@ function Analytics:EnsurePanel()
     -- Esc closes the panel like a normal WoW window.
     tinsert(UISpecialFrames, "ArenaArmoryStatsPanel")
 
+    -- New frames are shown by default; without this the first Toggle() sees
+    -- IsShown() == true and hides the (empty) panel, so /aa stats appeared to
+    -- need two invocations.
+    p:Hide()
+
     self.panel = p
     return p
 end
@@ -609,9 +614,10 @@ function Analytics:Populate()
                         table.insert(icons, ClassIconEscape(token, ICON))
                     end
                 end
+                -- Icons only (spec when detected, class otherwise) - matches
+                -- the recent-matches team strips.
                 Put(0, COL_TEAMS, "  " .. Record(c.w, c.l))
-                Put(COL_TEAMS, CONTENT_WIDTH - COL_TEAMS,
-                    table.concat(icons, "") .. "  " .. CompLabel(c.key))
+                Put(COL_TEAMS, CONTENT_WIDTH - COL_TEAMS, table.concat(icons, ""))
                 NextLine(ROW_HEIGHT)
             end
         end

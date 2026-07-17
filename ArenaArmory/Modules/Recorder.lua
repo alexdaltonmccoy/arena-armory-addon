@@ -115,28 +115,88 @@ function Recorder:OnArenaJoined()
     self.pollTimer = self:ScheduleRepeatingTimer("PollWinner", 2)
 end
 
+-- MERGES group members into current.team (never wipes): teammates who were
+-- seen once stay recorded even if they leave before the match finalizes.
+-- Scans both party and raid units - solo-queued skirmishes can place you in
+-- a raid-style instance group where partners are raidN, not partyN.
 function Recorder:SnapshotFriendlyTeam()
     if not current then return end
-    wipe(current.team)
-    table.insert(current.team, {
-        name = current.player.name,
-        class = current.player.class,
-        spec = current.player.spec,
-    })
-    local n = GetNumGroupMembers and (GetNumGroupMembers() - 1) or GetNumPartyMembers()
-    for i = 1, math.max(n or 0, 0) do
-        local unit = "party" .. i
-        if UnitExists(unit) then
-            local _, classToken = UnitClass(unit)
-            local name = AA.StripRealm(UnitName(unit))
-            table.insert(current.team, {
-                name = name,
-                class = classToken,
-                -- Teammate specs come from SpecDetection's friendly tracking
-                -- (signature spells/buffs); re-snapshotted at match end.
-                spec = name and AA.friendlySpecs and AA.friendlySpecs[name] or nil,
-            })
+    local byName = {}
+    for _, p in ipairs(current.team) do
+        if p.name then byName[p.name] = p end
+    end
+    local function Upsert(name, classToken)
+        if not name then return end
+        local e = byName[name]
+        if not e then
+            e = { name = name }
+            byName[name] = e
+            table.insert(current.team, e)
         end
+        e.class = e.class or classToken
+        -- Teammate specs come from SpecDetection's friendly tracking
+        -- (signature spells/buffs); re-snapshotted at match end.
+        e.spec = (AA.friendlySpecs and AA.friendlySpecs[name]) or e.spec
+    end
+
+    Upsert(current.player.name, current.player.class)
+    byName[current.player.name].spec = current.player.spec
+        or byName[current.player.name].spec
+
+    local function UpsertUnit(unit)
+        if UnitExists(unit) and not UnitIsUnit(unit, "player") then
+            local _, classToken = UnitClass(unit)
+            Upsert(AA.StripRealm(UnitName(unit)), classToken)
+        end
+    end
+    for i = 1, 4 do UpsertUnit("party" .. i) end
+    for i = 1, AA.MAX_ARENA_OPPONENTS do UpsertUnit("raid" .. i) end
+end
+
+-- Rosters can also be reconstructed from the end-of-match scoreboard, which
+-- lists every participant with team + class - the safety net for partners
+-- the group scan never saw (roster formed late, left early) and for enemies
+-- who stayed stealthed. Operates on DENSE team lists (post-compaction).
+function Recorder:MergeScoreboardRosters(record, rows)
+    if not record or type(rows) ~= "table" or #rows == 0 then return end
+    local me = record.player and record.player.name
+    if not me then return end
+
+    local mySide
+    for _, row in ipairs(rows) do
+        if row.name == me then mySide = row.team end
+    end
+    if mySide ~= 0 and mySide ~= 1 then mySide = record.ourSide end
+    if mySide ~= 0 and mySide ~= 1 then return end
+
+    local friendly, enemy = {}, {}
+    for _, p in ipairs(record.team) do
+        if p.name then friendly[p.name] = true end
+    end
+    for _, e in ipairs(record.enemyTeam) do
+        if e.name then enemy[e.name] = true end
+    end
+    for _, row in ipairs(rows) do
+        if row.name and (row.team == 0 or row.team == 1) and row.name ~= me then
+            if row.team == mySide then
+                if not friendly[row.name] then
+                    friendly[row.name] = true
+                    table.insert(record.team, { name = row.name, class = row.class })
+                end
+            elseif not enemy[row.name] then
+                enemy[row.name] = true
+                table.insert(record.enemyTeam, { name = row.name, class = row.class })
+            end
+        end
+    end
+    record.bracket = math.max(record.bracket or 1, #record.team, #record.enemyTeam)
+end
+
+-- The roster often forms a beat AFTER PLAYER_ENTERING_WORLD fires in a
+-- freshly assembled skirmish group; keep the snapshot current as it settles.
+function Recorder:OnRosterUpdate()
+    if current and not finalized then
+        self:SnapshotFriendlyTeam()
     end
 end
 
@@ -545,6 +605,9 @@ function Recorder:Finalize(winner)
     self:SnapshotFriendlyTeam()
     self:SnapshotEnemyTeam()
 
+    -- Ask the server for fresh scoreboard data; without this the score rows
+    -- can be empty/stale when the winner is first known.
+    if RequestBattlefieldScoreData then RequestBattlefieldScoreData() end
     current.scoreboard = self:CollectScoreboard()
     -- Team-info APIs first (they carry team names), then per-player
     -- scoreboard ratings (the only source on Anniversary, where arena
@@ -558,6 +621,9 @@ function Recorder:Finalize(winner)
     end
     current.enemyTeam = enemies
     current.startClock = nil
+
+    -- Fill roster gaps (unseen partners/stealthed enemies) from the scoreboard.
+    self:MergeScoreboardRosters(current, current.scoreboard)
 
     -- Empty Lua tables are ambiguous (array vs map) for the desktop parser.
     if current.events and #current.events == 0 then current.events = nil end
@@ -580,13 +646,21 @@ function Recorder:Finalize(winner)
     -- Ratings (and final scoreboard numbers) aren't available until
     -- UPDATE_BATTLEFIELD_SCORE fires after the match ends - often a beat
     -- AFTER the winner is known, which is when we finalize. Keep patching
-    -- the stored record while the scoreboard is still up.
-    if not current.ratings then
+    -- the stored record while the scoreboard is still up (this also fills
+    -- rosters for skirmishes whose scoreboard was empty at finalize).
+    if not current.ratings or not current.scoreboard or #current.scoreboard == 0 then
         self.lastRecord = current
         self.ratingRetries = 0
         if not self.ratingTimer then
             self.ratingTimer = self:ScheduleRepeatingTimer("RetryRatings", 1)
         end
+    end
+
+    -- SavedVariables only reach disk on logout or /reload; without knowing
+    -- that, "the desktop app doesn't see my games" is the #1 confusion.
+    if not self.saveHintShown then
+        self.saveHintShown = true
+        addon:Print("Reminder: matches reach the desktop app after you log out or /reload.")
     end
 
     current = nil
@@ -600,22 +674,28 @@ function Recorder:RetryRatings()
     end
     self.ratingRetries = (self.ratingRetries or 0) + 1
 
-    local ratings = self:CollectRatings()
-    local rows
-    if not ratings then
-        rows = self:CollectScoreboard()
-        ratings = self:RatingsFromScoreboard(rows)
+    if RequestBattlefieldScoreData then RequestBattlefieldScoreData() end
+    local rows = self:CollectScoreboard()
+    if rows and #rows > 0 then
+        -- Damage/healing totals also settle with the final score update,
+        -- and late score rows can reveal roster members we never saw live.
+        record.scoreboard = rows
+        self:MergeScoreboardRosters(record, rows)
     end
+
+    local ratings = self:CollectRatings() or self:RatingsFromScoreboard(rows)
     if ratings then
         record.ratings = ratings
-        -- Damage/healing totals also settle with the final score update.
-        record.scoreboard = rows or self:CollectScoreboard() or record.scoreboard
         self:StopRatingRetries()
         self:SendMessage("AA_MATCH_UPDATED", record)
         return
     end
-    -- Skirmish (never any ratings) or we left the map: stop after ~20s.
+    -- Skirmish (never any ratings) or we left the map: stop after ~20s,
+    -- announcing any roster/scoreboard data that did land along the way.
     if self.ratingRetries >= 20 then
+        if rows and #rows > 0 then
+            self:SendMessage("AA_MATCH_UPDATED", record)
+        end
         self:StopRatingRetries()
     end
 end
@@ -701,6 +781,8 @@ function Recorder:OnEnable()
     self:RegisterMessage("AA_CLEU", "OnCLEU")
     self:RegisterMessage("AA_TRINKET_USED", "OnTrinketUsed")
     self:RegisterEvent("UPDATE_BATTLEFIELD_STATUS", "PollWinner")
+    -- Skirmish groups assemble AFTER arena zone-in; catch late partners.
+    self:RegisterEvent("GROUP_ROSTER_UPDATE", "OnRosterUpdate")
     self.lastTrinket = self.lastTrinket or {}
 
     -- Record character identity so the companion app can attribute matches.
