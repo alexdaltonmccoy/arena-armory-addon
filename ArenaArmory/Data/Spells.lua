@@ -100,6 +100,21 @@ AA.COOLDOWN_SPELLS = {
 }
 
 -------------------------------------------------------------------------------
+-- Interrupt casts matched by NAME (any rank): the recorder logs every attempt
+-- so the site can compute juke/efficiency rates from attempts vs. lands.
+-- Earth Shock is excluded - it's a rotational nuke, not a dedicated interrupt.
+-------------------------------------------------------------------------------
+
+AA.INTERRUPT_CAST_NAMES = {
+    ["Kick"] = true,
+    ["Pummel"] = true,
+    ["Counterspell"] = true,
+    ["Spell Lock"] = true,
+    ["Shield Bash"] = true,
+    ["Silencing Shot"] = true,
+}
+
+-------------------------------------------------------------------------------
 -- Spec detection: spellID -> { class = classToken, spec = "SpecName" }
 -- First matching observed spell locks the spec for that opponent.
 -------------------------------------------------------------------------------

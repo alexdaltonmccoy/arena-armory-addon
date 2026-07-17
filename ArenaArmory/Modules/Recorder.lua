@@ -219,7 +219,10 @@ function Recorder:OnCLEU(_, _, subevent, sourceGUID, sourceName, sourceFlags,
         if not side then return end
         if AA.TRINKET_SPELLS[spellId] or AA.RACIAL_CC_BREAKS[spellId] then
             self:AddTrinketEvent(side, AA.StripRealm(sourceName), spellId)
-        elseif AA.COOLDOWN_SPELLS[spellId] then
+        elseif AA.COOLDOWN_SPELLS[spellId] or AA.INTERRUPT_CAST_NAMES[spellName] then
+            -- Interrupts are matched by NAME as well: players cast down-ranked
+            -- Kick/Pummel/Counterspell, whose IDs aren't in the cooldown list,
+            -- and the site derives juke rates from attempts vs. lands.
             AddEvent({
                 e = "cd", side = side, name = AA.StripRealm(sourceName),
                 spellId = spellId, spell = spellName,
