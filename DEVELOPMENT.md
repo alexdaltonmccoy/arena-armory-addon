@@ -33,6 +33,7 @@ from the git tag (see Releasing below).
 | `/aa test` | Toggle test mode (fake opponents for layout work) |
 | `/aa lock` | Lock/unlock the drag anchor |
 | `/aa matches` | Print stored match count |
+| `/aa ratings` | Dump raw values from every rating API (team info + per-player score info). Run on the end-of-match scoreboard of a rated game to diagnose missing ratings. |
 | `/aa stats` | Toggle the in-game stats panel (per-bracket records, recent matches with rating deltas, vs-comp and partner records). Updates live as matches are recorded. |
 | `/aa web` | Copyable link to arenaarmory.com |
 | `/aa lookup Name[-Realm]` | Copyable armory link for a character (no arg: current target). Shift-click an enemy frame does the same. |
@@ -46,7 +47,7 @@ disk on logout or `/reload`:
 WTF\Account\<ACCOUNT>\SavedVariables\ArenaArmory.lua
 ```
 
-Schema (v2), per match:
+Schema (v3), per match:
 
 - `guid`, `schemaVersion`, `startedAt`, `endedAt`, `durationSeconds`
 - `map`, `bracket`, `result` (`win`/`loss`/`draw`/`abandoned`/`unknown`), `ourSide`, `winner`
@@ -58,7 +59,12 @@ Schema (v2), per match:
   - `trinket` — PvP trinket / racial CC break
   - `int` — successful interrupt (`targetName`, `targetSpell`)
   - `cc` — crowd control applied (`cat` = DRList category); side is the victim's
-- `ratings` (per team old/new), `scoreboard[]` (damage/healing/killing blows per player)
+- `ratings` (per team old/new) — on Anniversary (no arena teams) this is
+  synthesized from per-player scoreboard ratings: our side's old/new is the
+  player's own rating, MMR is the side's average `prematchMMR`
+- `scoreboard[]` (damage/healing/killing blows per player; v3 adds personal
+  `rating`, `ratingChange`, `prematchMMR`, `postmatchMMR` from
+  `C_PvP.GetScoreInfo`)
 
 The Arena Armory desktop app watches this file and uploads new matches to
 arenaarmory.com.

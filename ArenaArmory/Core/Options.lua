@@ -258,6 +258,8 @@ addon:RegisterChatCommand("aa", function(input)
         addon:Print(AA.db.profile.locked and "Frames locked." or "Frames unlocked - drag the green anchor.")
     elseif command == "matches" then
         addon:Print(("Matches stored: %d"):format(AA.Recorder:GetMatchCount()))
+    elseif command == "ratings" then
+        AA.Recorder:DebugRatings()
     elseif command == "stats" then
         AA.Analytics:Toggle()
     elseif command == "web" then

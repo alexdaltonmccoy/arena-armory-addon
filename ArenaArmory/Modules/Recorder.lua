@@ -9,7 +9,10 @@ AA.Recorder = Recorder
 local DRList = LibStub("DRList-1.0")
 
 -- v2 adds the per-match `events` timeline (cooldowns, trinkets, interrupts, CC).
-local SCHEMA_VERSION = 2
+-- v3 adds per-player rating fields on scoreboard rows (rating, ratingChange,
+-- prematchMMR, postmatchMMR): TBC Anniversary has no arena teams, so ratings
+-- are personal and only exposed per player via C_PvP.GetScoreInfo.
+local SCHEMA_VERSION = 3
 
 -- Bounds SavedVariables growth on very long/chaotic matches.
 local MAX_EVENTS = 400
@@ -275,7 +278,7 @@ function Recorder:CollectScoreboard()
         local name, killingBlows, _, deaths, _, faction, _, race, _,
             classToken, damageDone, healingDone = GetBattlefieldScore(i)
         if name then
-            table.insert(rows, {
+            local row = {
                 name = AA.StripRealm(name),
                 team = faction, -- 0 = green, 1 = gold in arena
                 race = race,
@@ -284,24 +287,90 @@ function Recorder:CollectScoreboard()
                 deaths = deaths,
                 damage = damageDone,
                 healing = healingDone,
-            })
+            }
+            -- Anniversary rating is PERSONAL (arena teams are gone), exposed
+            -- per player on the modern scoreboard API that 2.5.6 ships.
+            if C_PvP and C_PvP.GetScoreInfo then
+                local info = C_PvP.GetScoreInfo(i)
+                if type(info) == "table" then
+                    row.rating = info.rating
+                    row.ratingChange = info.ratingChange
+                    row.prematchMMR = info.prematchMMR
+                    row.postmatchMMR = info.postmatchMMR
+                    if info.faction ~= nil then row.team = info.faction end
+                end
+            end
+            table.insert(rows, row)
         end
     end
     return rows
+end
+
+-- Builds the team-shaped `ratings` record from per-player scoreboard data.
+-- Our side gets the player's own pre/post rating; both sides get an MMR
+-- averaged from their players' prematchMMR (Blizzard's per-row rating is
+-- prematch, with ratingChange applied after - mirrors PVPMatchResults).
+function Recorder:RatingsFromScoreboard(rows)
+    if type(rows) ~= "table" then return nil end
+    local record = current or self.lastRecord
+    local me = record and record.player and record.player.name
+    if not me then return nil end
+
+    local ratings
+    local mmrSum, mmrCount = { [0] = 0, [1] = 0 }, { [0] = 0, [1] = 0 }
+    local myRow
+    for _, row in ipairs(rows) do
+        if row.name == me then myRow = row end
+        local side = row.team
+        if (side == 0 or side == 1) and (row.prematchMMR or 0) > 0 then
+            mmrSum[side] = mmrSum[side] + row.prematchMMR
+            mmrCount[side] = mmrCount[side] + 1
+        end
+    end
+
+    if myRow and (myRow.rating or 0) > 0 and (myRow.team == 0 or myRow.team == 1) then
+        local ourSide = myRow.team
+        local oldR = myRow.rating
+        local newR = oldR + (myRow.ratingChange or 0)
+        ratings = {}
+        ratings[ourSide] = {
+            oldRating = oldR,
+            newRating = newR,
+            rating = (myRow.postmatchMMR or 0) > 0 and myRow.postmatchMMR
+                or (mmrCount[ourSide] > 0 and math.floor(mmrSum[ourSide] / mmrCount[ourSide] + 0.5) or nil),
+        }
+        local enemySide = 1 - ourSide
+        if mmrCount[enemySide] > 0 then
+            ratings[enemySide] = {
+                rating = math.floor(mmrSum[enemySide] / mmrCount[enemySide] + 0.5),
+            }
+        end
+    end
+    return ratings
 end
 
 function Recorder:CollectRatings()
     local ratings
     for teamIndex = 0, 1 do
         local teamName, oldRating, newRating, mmr
-        -- 2.5.6 ships modern UI code; prefer the modern API when present.
+        -- 2.5.6 ships modern UI code, so C_PvP.GetTeamInfo can EXIST yet
+        -- return nothing for TBC arenas. Never let its presence block the
+        -- legacy API: try modern first, then fall back whenever it yielded
+        -- no usable numbers.
         if C_PvP and C_PvP.GetTeamInfo then
             local info = C_PvP.GetTeamInfo(teamIndex)
             if info then
                 teamName, oldRating, newRating, mmr = info.name, info.rating, info.ratingNew, info.ratingMMR
             end
-        elseif GetBattlefieldTeamInfo then
-            teamName, oldRating, newRating, mmr = GetBattlefieldTeamInfo(teamIndex)
+        end
+        local haveNumbers = (oldRating and oldRating > 0) or (newRating and newRating > 0)
+            or (mmr and mmr > 0)
+        if not haveNumbers and GetBattlefieldTeamInfo then
+            local lName, lOld, lNew, lRating = GetBattlefieldTeamInfo(teamIndex)
+            local legacyNumbers = (lOld and lOld > 0) or (lNew and lNew > 0) or (lRating and lRating > 0)
+            if legacyNumbers or not teamName or teamName == "" then
+                teamName, oldRating, newRating, mmr = lName, lOld, lNew, lRating
+            end
         end
         -- Skirmishes report zeros/empty across the board; store nothing so
         -- consumers can tell "unrated" apart from "rated at 0".
@@ -351,7 +420,10 @@ function Recorder:Finalize(winner)
     self:SnapshotEnemyTeam()
 
     current.scoreboard = self:CollectScoreboard()
-    current.ratings = self:CollectRatings()
+    -- Team-info APIs first (they carry team names), then per-player
+    -- scoreboard ratings (the only source on Anniversary, where arena
+    -- teams don't exist and team info reports zeros).
+    current.ratings = self:CollectRatings() or self:RatingsFromScoreboard(current.scoreboard)
 
     -- Compact enemyTeam sparse array into a list.
     local enemies = {}
@@ -400,10 +472,15 @@ function Recorder:RetryRatings()
     self.ratingRetries = (self.ratingRetries or 0) + 1
 
     local ratings = self:CollectRatings()
+    local rows
+    if not ratings then
+        rows = self:CollectScoreboard()
+        ratings = self:RatingsFromScoreboard(rows)
+    end
     if ratings then
         record.ratings = ratings
         -- Damage/healing totals also settle with the final score update.
-        record.scoreboard = self:CollectScoreboard() or record.scoreboard
+        record.scoreboard = rows or self:CollectScoreboard() or record.scoreboard
         self:StopRatingRetries()
         self:SendMessage("AA_MATCH_UPDATED", record)
         return
@@ -420,6 +497,52 @@ function Recorder:StopRatingRetries()
         self.ratingTimer = nil
     end
     self.lastRecord = nil
+end
+
+-- /aa ratings: dump exactly what both rating APIs return right now. Run it
+-- on the post-match scoreboard of a RATED game to diagnose missing ratings.
+function Recorder:DebugRatings()
+    addon:Print("Rating API dump (run this on the end-of-match scoreboard):")
+    for teamIndex = 0, 1 do
+        if C_PvP and C_PvP.GetTeamInfo then
+            local info = C_PvP.GetTeamInfo(teamIndex)
+            if info then
+                addon:Print(("  C_PvP.GetTeamInfo(%d): name=%s rating=%s ratingNew=%s ratingMMR=%s"):format(
+                    teamIndex, tostring(info.name), tostring(info.rating),
+                    tostring(info.ratingNew), tostring(info.ratingMMR)))
+            else
+                addon:Print(("  C_PvP.GetTeamInfo(%d): nil"):format(teamIndex))
+            end
+        else
+            addon:Print("  C_PvP.GetTeamInfo: API not present")
+        end
+        if GetBattlefieldTeamInfo then
+            local name, oldR, newR, rating = GetBattlefieldTeamInfo(teamIndex)
+            addon:Print(("  GetBattlefieldTeamInfo(%d): name=%s old=%s new=%s rating=%s"):format(
+                teamIndex, tostring(name), tostring(oldR), tostring(newR), tostring(rating)))
+        else
+            addon:Print("  GetBattlefieldTeamInfo: API not present")
+        end
+    end
+    addon:Print(("  winner=%s, scores=%s"):format(
+        tostring(GetBattlefieldWinner and GetBattlefieldWinner()),
+        tostring(GetNumBattlefieldScores and GetNumBattlefieldScores())))
+    -- Per-player personal ratings (the Anniversary way).
+    if C_PvP and C_PvP.GetScoreInfo and GetNumBattlefieldScores then
+        for i = 1, GetNumBattlefieldScores() do
+            local info = C_PvP.GetScoreInfo(i)
+            if type(info) == "table" then
+                addon:Print(("  GetScoreInfo(%d): %s team=%s rating=%s change=%s mmr=%s/%s"):format(
+                    i, tostring(info.name), tostring(info.faction),
+                    tostring(info.rating), tostring(info.ratingChange),
+                    tostring(info.prematchMMR), tostring(info.postmatchMMR)))
+            else
+                addon:Print(("  GetScoreInfo(%d): %s"):format(i, tostring(info)))
+            end
+        end
+    else
+        addon:Print("  C_PvP.GetScoreInfo: API not present")
+    end
 end
 
 function Recorder:OnArenaLeft()
