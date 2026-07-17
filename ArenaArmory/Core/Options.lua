@@ -108,7 +108,11 @@ local options = {
             type = "group", order = 13, name = "Trinket",
             args = {
                 enabled = { type = "toggle", order = 1, name = "Track PvP trinket" },
-                size = { type = "range", order = 2, name = "Icon size", min = 20, max = 64, step = 2 },
+                trackRacial = {
+                    type = "toggle", order = 2, name = "Track racial CC break", width = "full",
+                    desc = "Will of the Forsaken doesn't share the trinket cooldown in TBC, so it gets its own icon to the right of the medallion (appears on first use).",
+                },
+                size = { type = "range", order = 3, name = "Icon size", min = 20, max = 64, step = 2 },
             },
         },
         dr = {

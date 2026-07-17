@@ -15,7 +15,7 @@ local function ApplyTestData(i, opp)
     f.classToken = opp.class
     AA.Frames:SetFrameClass(f, opp.class)
     f.nameText:SetText(cfg.showNames and opp.name or "")
-    f.specText:SetText(opp.spec)
+    f.specText:SetText(opp.race and (opp.spec .. " " .. opp.race) or opp.spec)
 
     -- Plausible TBC pools so the value/percent text modes preview correctly.
     local hpMax, powerMax = 11000, 10500
@@ -60,6 +60,8 @@ local function ApplyAllTestData()
 
         if AA.Trinket and AA.db.profile.trinket.enabled and i <= 2 then
             AA.Trinket:StartCooldown(i, 42292, 120)
+            -- The test rogue is Undead: preview the separate WotF icon too.
+            if i == 1 then AA.Trinket:StartCooldown(i, 7744, 120) end
         end
         if AA.DR and AA.db.profile.dr.enabled then
             AA.DR:Handle(i, "stun", 8643, false)

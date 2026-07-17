@@ -98,7 +98,7 @@ function SpecDetection:SetSpec(i, spec)
     if AA.detectedSpecs[i] then return end
     AA.detectedSpecs[i] = spec
     local f = AA.GetFrame(i)
-    if f then f.specText:SetText(spec) end
+    if f then AA.Frames:UpdateSpecText(f) end
     addon:SendMessage("AA_SPEC_DETECTED", i, spec)
 end
 

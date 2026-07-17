@@ -38,6 +38,9 @@ AA.defaults = {
         trinket = {
             enabled = true,
             size = 44,
+            -- Racial CC breaks (Will of the Forsaken) get their own icon:
+            -- they don't share the trinket cooldown in TBC.
+            trackRacial = true,
         },
 
         dr = {

@@ -300,7 +300,7 @@ local function ApplyPlaceholder(f)
     f.classIcon:SetTexture("Interface\\Icons\\INV_Misc_QuestionMark")
     f.classIcon:SetTexCoord(0.07, 0.93, 0.07, 0.93)
     f.nameText:SetText("Enemy " .. f.index)
-    f.specText:SetText(AA.detectedSpecs and AA.detectedSpecs[f.index] or "")
+    Frames:UpdateSpecText(f)
     f.healthText:SetText("")
     f.powerText:SetText("")
     f.healthBar:SetStatusBarColor(0.4, 0.4, 0.4)
@@ -313,6 +313,7 @@ local function ClearFrame(f)
     f.guid = nil
     f.prefilled = nil
     f.classToken = nil
+    f.raceName = nil
     f.nameText:SetText("")
     f.specText:SetText("")
     f.healthText:SetText("")
@@ -386,6 +387,16 @@ end
 -- Data updates
 -------------------------------------------------------------------------------
 
+-- Spec label = "Spec Race" (e.g. "Arms Tauren"), whichever parts are known.
+function Frames:UpdateSpecText(f)
+    local spec = AA.detectedSpecs and AA.detectedSpecs[f.index]
+    local text = spec or ""
+    if f.raceName then
+        text = spec and (spec .. " " .. f.raceName) or f.raceName
+    end
+    f.specText:SetText(text)
+end
+
 function Frames:SetFrameClass(f, classToken)
     local coords = AA.CLASS_ICON_TCOORDS[classToken]
     if coords then
@@ -452,6 +463,12 @@ function Frames:UpdateUnit(f)
         end
     else
         f.nameText:SetText("")
+    end
+
+    local race = UnitRace(unit)
+    if race and race ~= f.raceName then
+        f.raceName = race
+        self:UpdateSpecText(f)
     end
 
     local cfg = AA.db.profile.frames

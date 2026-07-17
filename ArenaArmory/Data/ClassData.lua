@@ -93,9 +93,9 @@ AA.CLASS_DEFAULT_POWER = {
 
 -- Test mode sample opponents.
 AA.TEST_OPPONENTS = {
-    { name = "Testrogue",   class = "ROGUE",   spec = "Subtlety",    health = 0.85, power = 0.6,  powerType = "ENERGY" },
-    { name = "Testpriest",  class = "PRIEST",  spec = "Discipline",  health = 0.62, power = 0.45, powerType = "MANA" },
-    { name = "Testmage",    class = "MAGE",    spec = "Frost",       health = 1.0,  power = 0.9,  powerType = "MANA" },
-    { name = "Testwarrior", class = "WARRIOR", spec = "Arms",        health = 0.35, power = 0.8,  powerType = "RAGE" },
-    { name = "Testdruid",   class = "DRUID",   spec = "Restoration", health = 0.5,  power = 0.3,  powerType = "MANA" },
+    { name = "Testrogue",   class = "ROGUE",   spec = "Subtlety",    race = "Undead",   health = 0.85, power = 0.6,  powerType = "ENERGY" },
+    { name = "Testpriest",  class = "PRIEST",  spec = "Discipline",  race = "Human",    health = 0.62, power = 0.45, powerType = "MANA" },
+    { name = "Testmage",    class = "MAGE",    spec = "Frost",       race = "Gnome",    health = 1.0,  power = 0.9,  powerType = "MANA" },
+    { name = "Testwarrior", class = "WARRIOR", spec = "Arms",        race = "Tauren",   health = 0.35, power = 0.8,  powerType = "RAGE" },
+    { name = "Testdruid",   class = "DRUID",   spec = "Restoration", race = "Night Elf", health = 0.5,  power = 0.3,  powerType = "MANA" },
 }
