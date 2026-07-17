@@ -40,15 +40,18 @@ companion (`C:\dev\arena-armory-desktop`), and the web app / API
   rows on the site chart both sides over time with a focus-target strip and
   a target-swap count chip.
 
+- **Matchup drill-downs** - tap any vs-comp row for a per-comp breakdown:
+  record + rating net, common enemy openers (anchored to the first hostile
+  action), "what worked" wins-vs-losses observations, best partners for the
+  matchup, and the comp's match list.
+
 ## Next up
-
-- **Matchup drill-down pages** - dedicated per-comp pages aggregating your
-  games vs that comp (winrate trend, common openers, what worked).
-
-## Later
 
 - **Player discovery** - find teammates by bracket/rating/class; opt-in
   Btag sharing.
+
+## Later
+
 - **Gamer profiles** - streamer links, live-stream embeds, featured players.
 - **Expanded class & comp strategies** - ability priorities, matchup deep
   dives, contributor-authored guides.
