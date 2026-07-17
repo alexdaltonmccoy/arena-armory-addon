@@ -34,10 +34,16 @@ companion (`C:\dev\arena-armory-desktop`), and the web app / API
   kicks landed/juked, longest CC chain). Addon v1.3.8 records every rank of
   dedicated interrupt casts so attempts vs. lands is measurable.
 
+- **Damage/healing timelines + target swaps** - addon v1.4.0 (schema v4)
+  records bucketed per-side damage/healing (pets counted, overheal
+  subtracted) and the enemy's focus target per 10s bucket; expanded match
+  rows on the site chart both sides over time with a focus-target strip and
+  a target-swap count chip.
+
 ## Next up
 
-- **Deeper per-match stats** - target swaps, damage/healing timelines from
-  the event stream; drill-down pages per matchup.
+- **Matchup drill-down pages** - dedicated per-comp pages aggregating your
+  games vs that comp (winrate trend, common openers, what worked).
 
 ## Later
 

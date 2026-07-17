@@ -12,10 +12,30 @@ local DRList = LibStub("DRList-1.0")
 -- v3 adds per-player rating fields on scoreboard rows (rating, ratingChange,
 -- prematchMMR, postmatchMMR): TBC Anniversary has no arena teams, so ratings
 -- are personal and only exposed per player via C_PvP.GetScoreInfo.
-local SCHEMA_VERSION = 3
+-- v4 adds `timeline`: bucketed damage/healing per side plus enemy focus
+-- target per bucket (target-swap analysis on the website).
+local SCHEMA_VERSION = 4
 
 -- Bounds SavedVariables growth on very long/chaotic matches.
 local MAX_EVENTS = 400
+
+-- Damage/healing timeline resolution and cap (120 buckets = 20 minutes).
+local TIMELINE_STEP = 10
+local MAX_BUCKETS = 120
+
+-- subevent -> which forwarded CLEU arg carries the damage amount:
+-- SWING_* has no spell triplet, so its payload starts at arg12.
+local DAMAGE_AMOUNT_ARG = {
+    SWING_DAMAGE = 12,
+    RANGE_DAMAGE = 15,
+    SPELL_DAMAGE = 15,
+    SPELL_PERIODIC_DAMAGE = 15,
+    DAMAGE_SHIELD = 15,
+}
+local HEAL_EVENTS = {
+    SPELL_HEAL = true,
+    SPELL_PERIODIC_HEAL = true,
+}
 
 local current   -- in-progress match record
 local finalized
@@ -87,6 +107,8 @@ function Recorder:OnArenaJoined()
         result = nil,
     }
     self.lastTrinket = {}
+    -- Timeline accumulators: [bucket] = total; focusDmg[bucket][victim] = dmg.
+    self.tl = { dmgF = {}, dmgE = {}, healF = {}, healE = {}, focusDmg = {} }
 
     self:SnapshotFriendlyTeam()
     self:SnapshotEnemyTeam()
@@ -157,6 +179,20 @@ local function SideOfFlags(flags)
     return nil
 end
 
+-- Same, but pets/guardians count toward their owner's side: timeline damage
+-- would badly undercount hunters/warlocks otherwise.
+local UNIT_TYPE_MASK = bit.bor(
+    COMBATLOG_OBJECT_TYPE_PLAYER,
+    COMBATLOG_OBJECT_TYPE_PET,
+    COMBATLOG_OBJECT_TYPE_GUARDIAN
+)
+local function SideIncludingPets(flags)
+    if not flags or bit.band(flags, UNIT_TYPE_MASK) == 0 then return nil end
+    if bit.band(flags, COMBATLOG_OBJECT_REACTION_HOSTILE) > 0 then return "enemy" end
+    if bit.band(flags, COMBATLOG_OBJECT_REACTION_FRIENDLY) > 0 then return "friendly" end
+    return nil
+end
+
 -- Appends a timeline event (schema v2), bounded so a marathon match can't
 -- bloat SavedVariables.
 local function AddEvent(ev)
@@ -189,8 +225,49 @@ function Recorder:OnTrinketUsed(_, i, spellId)
 end
 
 function Recorder:OnCLEU(_, _, subevent, sourceGUID, sourceName, sourceFlags,
-                         destGUID, destName, destFlags, spellId, spellName, _, arg15)
+                         destGUID, destName, destFlags, spellId, spellName, _, arg15, arg16)
     if not current then return end
+
+    -- Damage/healing timeline (hot path: bail out with cheap checks first).
+    local dmgArg = DAMAGE_AMOUNT_ARG[subevent]
+    if dmgArg or HEAL_EVENTS[subevent] then
+        if finalized or not current.startClock or not self.tl then return end
+        local side = SideIncludingPets(sourceFlags)
+        if not side then return end
+        local idx = math.floor((GetTime() - current.startClock) / TIMELINE_STEP) + 1
+        if idx < 1 or idx > MAX_BUCKETS then return end
+
+        if dmgArg then
+            -- For SWING_DAMAGE the amount sits where spellId usually is.
+            local amount = (dmgArg == 12) and tonumber(spellId) or tonumber(arg15)
+            if not amount or amount <= 0 then return end
+            local t = (side == "friendly") and self.tl.dmgF or self.tl.dmgE
+            t[idx] = (t[idx] or 0) + amount
+
+            -- Focus tracking: enemy damage into friendly PLAYERS (not pets),
+            -- to derive who they were training and when they swapped.
+            if side == "enemy" and destFlags
+                and bit.band(destFlags, COMBATLOG_OBJECT_TYPE_PLAYER) > 0
+                and bit.band(destFlags, COMBATLOG_OBJECT_REACTION_FRIENDLY) > 0 then
+                local victim = AA.StripRealm(destName)
+                if victim then
+                    local bucket = self.tl.focusDmg[idx]
+                    if not bucket then
+                        bucket = {}
+                        self.tl.focusDmg[idx] = bucket
+                    end
+                    bucket[victim] = (bucket[victim] or 0) + amount
+                end
+            end
+        else
+            -- Effective healing only: amount minus overheal.
+            local amount = (tonumber(arg15) or 0) - (tonumber(arg16) or 0)
+            if amount <= 0 then return end
+            local t = (side == "friendly") and self.tl.healF or self.tl.healE
+            t[idx] = (t[idx] or 0) + amount
+        end
+        return
+    end
 
     if subevent == "UNIT_DIED" then
         local side
@@ -259,6 +336,55 @@ end
 -------------------------------------------------------------------------------
 -- Match end
 -------------------------------------------------------------------------------
+
+-- Densifies the timeline accumulators into the compact record shape:
+-- arrays of per-bucket totals, the enemy's focus target per bucket (""
+-- when no enemy damage landed), and the focus-swap count.
+function Recorder:BuildTimeline()
+    if not self.tl or not current then return nil end
+    local duration = math.max(current.durationSeconds or 0, 1)
+    local n = math.min(math.ceil(duration / TIMELINE_STEP), MAX_BUCKETS)
+    if n < 1 then return nil end
+
+    local any = false
+    local function densify(src)
+        local out = {}
+        for i = 1, n do
+            local v = src[i] or 0
+            if v > 0 then any = true end
+            out[i] = v
+        end
+        return out
+    end
+    local dmgF, dmgE = densify(self.tl.dmgF), densify(self.tl.dmgE)
+    local healF, healE = densify(self.tl.healF), densify(self.tl.healE)
+    if not any then return nil end
+
+    local focus = {}
+    local swaps, lastTarget = 0, nil
+    for i = 1, n do
+        local best, bestDmg = "", 0
+        local bucket = self.tl.focusDmg[i]
+        if bucket then
+            for name, dmg in pairs(bucket) do
+                if dmg > bestDmg then best, bestDmg = name, dmg end
+            end
+        end
+        focus[i] = best
+        if best ~= "" then
+            if lastTarget and best ~= lastTarget then swaps = swaps + 1 end
+            lastTarget = best
+        end
+    end
+
+    return {
+        step = TIMELINE_STEP,
+        dmg = { f = dmgF, e = dmgE },
+        heal = { f = healF, e = healE },
+        focus = focus,
+        swaps = swaps,
+    }
+end
 
 function Recorder:PollWinner()
     if not current or finalized then return end
@@ -435,6 +561,9 @@ function Recorder:Finalize(winner)
 
     -- Empty Lua tables are ambiguous (array vs map) for the desktop parser.
     if current.events and #current.events == 0 then current.events = nil end
+
+    current.timeline = self:BuildTimeline()
+    self.tl = nil
 
     -- Battlefield status reports teamSize 0 for skirmishes; the actual team
     -- rosters are the reliable source, so trust whichever count is largest.

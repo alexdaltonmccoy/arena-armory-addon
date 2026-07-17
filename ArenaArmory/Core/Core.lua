@@ -130,9 +130,10 @@ end
 function addon:OnCLEU()
     local timestamp, subevent, _, sourceGUID, sourceName, sourceFlags, _,
         destGUID, destName, destFlags, _,
-        arg12, arg13, arg14, arg15 = CombatLogGetCurrentEventInfo()
+        arg12, arg13, arg14, arg15, arg16 = CombatLogGetCurrentEventInfo()
+    -- arg16 is overhealing for heal events (needed for effective-healing math).
     self:SendMessage("AA_CLEU", timestamp, subevent, sourceGUID, sourceName, sourceFlags,
-        destGUID, destName, destFlags, arg12, arg13, arg14, arg15)
+        destGUID, destName, destFlags, arg12, arg13, arg14, arg15, arg16)
 end
 
 -- Returns "arenaN" for a hostile arena GUID, or nil.

@@ -47,7 +47,7 @@ disk on logout or `/reload`:
 WTF\Account\<ACCOUNT>\SavedVariables\ArenaArmory.lua
 ```
 
-Schema (v3), per match:
+Schema (v4), per match:
 
 - `guid`, `schemaVersion`, `startedAt`, `endedAt`, `durationSeconds`
 - `map`, `bracket`, `result` (`win`/`loss`/`draw`/`abandoned`/`unknown`), `ourSide`, `winner`
@@ -59,6 +59,11 @@ Schema (v3), per match:
   - `trinket` — PvP trinket / racial CC break
   - `int` — successful interrupt (`targetName`, `targetSpell`)
   - `cc` — crowd control applied (`cat` = DRList category); side is the victim's
+- `timeline` (v4) — bucketed combat totals for charts and target-swap
+  analysis: `{ step = 10, dmg = { f/e = per-bucket arrays }, heal = { f/e },
+  focus = per-bucket enemy focus target name ("" = none), swaps = count }`.
+  Pets/guardians count toward their owner's side; healing is effective
+  (overheal subtracted); capped at 120 buckets (20 min)
 - `ratings` (per team old/new) — on Anniversary (no arena teams) this is
   synthesized from per-player scoreboard ratings: our side's old/new is the
   player's own rating, MMR is the side's average `prematchMMR`
