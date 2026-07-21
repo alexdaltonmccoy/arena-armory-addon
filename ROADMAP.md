@@ -47,8 +47,13 @@ companion (`C:\dev\arena-armory-desktop`), and the web app / API
 
 ## Next up
 
-- **Player discovery** - find teammates by bracket/rating/class; opt-in
-  Btag sharing.
+- **Matches UX polish** - empty states, match-detail back links, Overview
+  clarity (in progress / shipping now).
+
+## Paused
+
+- **Player discovery / LFG** - find teammates by bracket/rating/class; opt-in
+  Btag sharing. Parked until matches UX and claim volume are solid.
 
 ## Later
 
