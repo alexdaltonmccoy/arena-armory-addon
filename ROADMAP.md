@@ -47,17 +47,24 @@ companion (`C:\dev\arena-armory-desktop`), and the web app / API
 
 ## Next up
 
-- **Matches UX polish** - empty states, match-detail back links, Overview
-  clarity (in progress / shipping now).
+- **Gamer profiles (richer)** - live-stream embeds, featured players, more
+  profile depth on top of Profiles lite.
+
+## Shipped recently
+
+- **Profiles lite** - opt-in public `/profile/{battletag-slug}` with claimed
+  characters and Twitch/YouTube links (edited on /account; Hidden by default;
+  per-character Public/Private also gates profile listing).
+- **Matches UX polish** - empty states, match-detail back links, Matches /
+  Overview tabs, CR-first PvP cards, chart sort.
 
 ## Paused
 
 - **Player discovery / LFG** - find teammates by bracket/rating/class; opt-in
-  Btag sharing. Parked until matches UX and claim volume are solid.
+  Btag sharing. Parked until profiles and claim volume are solid.
 
 ## Later
 
-- **Gamer profiles** - streamer links, live-stream embeds, featured players.
 - **Expanded class & comp strategies** - ability priorities, matchup deep
   dives, contributor-authored guides.
 - **Contributor program** - expert players write/review guides, revenue share
