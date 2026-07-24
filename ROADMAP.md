@@ -85,7 +85,8 @@ companion (`C:\dev\arena-armory-desktop`), and the web app / API
 - **Expanded class & comp strategies** - ability priorities, matchup deep
   dives, contributor-authored guides.
 - **Contributor program** - expert players write/review guides, revenue share
-  or perks.
+  or perks. Application form lives at arenaarmory.com/contribute
+  (Firestore `contributorApplications`).
 - **Monetization** - ads vs. paid tier (advanced analytics, coaching tools);
   decide after traffic grows.
 - **Video/screenshot import for coaching** - desktop app records or ingests
