@@ -47,8 +47,19 @@ companion (`C:\dev\arena-armory-desktop`), and the web app / API
 
 ## Next up
 
+- **Match result scoreboards (high-level)** - on each match detail page,
+  alongside (or above) coaching narrative ("what went right / wrong / next"),
+  show winner-vs-loser tables for high-level metrics: damage done, CC done,
+  healing, etc. — team totals and per-player rows. Same view when drilling
+  into a vs-comp (e.g. vs RMP): aggregate those high-level stats across games
+  vs that composition, not only W/L and tips.
+- **Profile / matchup stats (high-level)** - on public/claimed profile (and
+  character PvP overview): rating and high-level performance summary by
+  bracket (2s / 3s / 5s) and by matchup (vs RMP, etc.), built from the same
+  scoreboard metrics — not per-ability deep dives.
 - **Gamer profiles (richer)** - live-stream embeds, featured players, more
-  profile depth on top of Profiles lite.
+  profile depth on top of Profiles lite (pairs with profile/matchup stats
+  above).
 
 ## Shipped recently
 
@@ -57,6 +68,8 @@ companion (`C:\dev\arena-armory-desktop`), and the web app / API
   per-character Public/Private also gates profile listing).
 - **Matches UX polish** - empty states, match-detail back links, Matches /
   Overview tabs, CR-first PvP cards, chart sort.
+- **Mobile 1.1.0** - EAS production builds submitted to App Store Connect /
+  Play internal.
 
 ## Paused
 
@@ -65,6 +78,10 @@ companion (`C:\dev\arena-armory-desktop`), and the web app / API
 
 ## Later
 
+- **Comp standards (optional / lower priority)** - "in this matchup this class
+  typically does X damage" style baselines vs the field; only after per-match
+  and vs-comp scoreboards exist and prove useful. Easy to overfit or feel
+  noisy — keep high-level first.
 - **Expanded class & comp strategies** - ability priorities, matchup deep
   dives, contributor-authored guides.
 - **Contributor program** - expert players write/review guides, revenue share
