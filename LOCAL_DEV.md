@@ -9,13 +9,17 @@ Point the game at your git checkout (junction = no copy, edits are live after
 `/reload`):
 
 ```powershell
-# Adjust the Classic Anniversary path if yours differs
-$wowAddOns = "C:\Program Files (x86)\World of Warcraft\_classic_\Interface\AddOns"
+# TBC Anniversary client (not _classic_ / _classic_era_)
+$wowAddOns = "C:\Program Files (x86)\World of Warcraft\_anniversary_\Interface\AddOns"
 $src = "C:\dev\wow-gladius\ArenaArmory"
 
-# Remove a previous copy/junction if needed, then:
+# If a real folder already exists there, remove it first (junctions replace copies):
+# Remove-Item -LiteralPath "$wowAddOns\ArenaArmory" -Recurse -Force
 cmd /c mklink /J "$wowAddOns\ArenaArmory" "$src"
 ```
+
+A normal copied folder will **not** pick up repo edits — confirm with
+`(Get-Item $wowAddOns\ArenaArmory).LinkType` → should be `Junction`.
 
 Or copy `ArenaArmory` into `Interface\AddOns` after each change.
 

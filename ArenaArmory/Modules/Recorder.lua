@@ -461,15 +461,97 @@ local function PositiveNumber(v)
     return (v and v > 0) and v or nil
 end
 
+-- Class token → true for locating the scoreboard row payload. Anniversary
+-- inserts extra numeric fields before race/class, so fixed indices break.
+local CLASS_TOKEN = {}
+for _, tok in ipairs(AA.CLASSES or {}) do CLASS_TOKEN[tok] = true end
+
+-- After damage/healing, clients differ:
+--   Anniversary UI columns: ratingChange, preMatchMMR (Matchmaking Value)
+--   Modern wiki:            bgRating, ratingChange, preMatchMMR, mmrChange
+local function AssignRatingFields(a, b, c, d)
+    a, b, c, d = tonumber(a), tonumber(b), tonumber(c), tonumber(d)
+    if d ~= nil then
+        return a, b, c, d
+    end
+    if c ~= nil then
+        return a, b, c, nil
+    end
+    if a ~= nil and b ~= nil then
+        -- Two trailing numbers: prefer Anniversary (delta + MMV) when the
+        -- first looks like a rating change and the second like MMR/CR.
+        if math.abs(a) <= 500 and b >= 500 then
+            return nil, a, b, nil
+        end
+        return a, b, nil, nil
+    end
+    if a ~= nil then
+        return a, nil, nil, nil
+    end
+    return nil, nil, nil, nil
+end
+
+local function UnpackBattlefieldScore(i)
+    if not GetBattlefieldScore then return nil end
+    local n = select("#", GetBattlefieldScore(i))
+    if n < 1 then return nil end
+    local r = {}
+    for j = 1, n do
+        r[j] = select(j, GetBattlefieldScore(i))
+    end
+    local name = r[1]
+    if not name then return nil end
+    local killingBlows, deaths, faction = r[2], r[4], r[6]
+
+    local tokenIdx
+    for j = 7, n - 2 do
+        if type(r[j]) == "string" and CLASS_TOKEN[r[j]]
+            and type(r[j + 1]) == "number" and type(r[j + 2]) == "number" then
+            tokenIdx = j
+            break
+        end
+    end
+    if not tokenIdx then return name, killingBlows, deaths, faction end
+
+    local classToken = r[tokenIdx]
+    local race = type(r[tokenIdx - 2]) == "string" and r[tokenIdx - 2] or nil
+    local damageDone, healingDone = r[tokenIdx + 1], r[tokenIdx + 2]
+    local bgRating, ratingChange, preMatchMMR, mmrChange = AssignRatingFields(
+        r[tokenIdx + 3], r[tokenIdx + 4], r[tokenIdx + 5], r[tokenIdx + 6])
+    return name, killingBlows, deaths, faction, race, classToken,
+        damageDone, healingDone, bgRating, ratingChange, preMatchMMR, mmrChange
+end
+
+local function BracketRatedIndex(size)
+    if size == 2 then return 1 end
+    if size == 3 then return 2 end
+    if size == 5 then return 3 end
+    return nil
+end
+
+-- Post-match personal CR for the current bracket (scoreboard often only
+-- shows rating *change* + matchmaking value, not absolute CR).
+function Recorder:PersonalBracketRating()
+    if not GetPersonalRatedInfo then return nil end
+    local record = current or self.lastRecord
+    local size = record and record.bracket
+    if not size or size < 1 then
+        local n = GetNumBattlefieldScores and GetNumBattlefieldScores() or 0
+        if n >= 2 then size = math.floor(n / 2) end
+    end
+    local idx = BracketRatedIndex(size)
+    if not idx then return nil end
+    local rating = GetPersonalRatedInfo(idx)
+    return PositiveNumber(rating)
+end
+
 function Recorder:CollectScoreboard()
     if not GetNumBattlefieldScores then return nil end
     local rows = {}
     for i = 1, GetNumBattlefieldScores() do
-        -- 2.5.6 / Anniversary signature: classic fields, then personal rating
-        -- extras (names vary by client build — capture both styles below).
-        local name, killingBlows, _, deaths, _, faction, _, race, _,
-            classToken, damageDone, healingDone,
-            bgRating, ratingChange, preMatchMMR, mmrChange = GetBattlefieldScore(i)
+        local name, killingBlows, deaths, faction, race, classToken,
+            damageDone, healingDone, bgRating, ratingChange, preMatchMMR, mmrChange =
+            UnpackBattlefieldScore(i)
         if name then
             local row = {
                 name = AA.StripRealm(name),
@@ -499,8 +581,7 @@ function Recorder:CollectScoreboard()
                     if info.faction ~= nil then row.team = info.faction end
                 end
             end
-            -- Fall back to GetBattlefieldScore's trailing returns (wiki:
-            -- bgRating, ratingChange, preMatchMMR, mmrChange).
+            -- Fall back to GetBattlefieldScore trailing returns.
             if not row.rating then
                 row.rating = PositiveNumber(bgRating)
             end
@@ -520,13 +601,16 @@ function Recorder:CollectScoreboard()
 end
 
 -- Builds the team-shaped `ratings` record from per-player scoreboard data.
--- Our side gets the player's own pre/post rating; both sides get an MMR
--- averaged from their players' prematchMMR (Blizzard's per-row rating is
--- prematch, with ratingChange applied after - mirrors PVPMatchResults).
+-- CR from scoreboard bgRating when present; otherwise GetPersonalRatedInfo
+-- (post-match) minus ratingChange. MMR is the per-side average of
+-- Matchmaking Value (prematchMMR).
 function Recorder:RatingsFromScoreboard(rows)
     if type(rows) ~= "table" then return nil end
     local record = current or self.lastRecord
     local me = record and record.player and record.player.name
+    if not me and UnitName then
+        me = AA.StripRealm(UnitName("player"))
+    end
     if not me then return nil end
 
     local ratings
@@ -541,22 +625,36 @@ function Recorder:RatingsFromScoreboard(rows)
         end
     end
 
-    if myRow and (myRow.rating or 0) > 0 and (myRow.team == 0 or myRow.team == 1) then
+    if myRow and (myRow.team == 0 or myRow.team == 1) then
         local ourSide = myRow.team
-        local oldR = myRow.rating
-        local newR = oldR + (myRow.ratingChange or 0)
-        ratings = {}
-        ratings[ourSide] = {
-            oldRating = oldR,
-            newRating = newR,
-            rating = (myRow.postmatchMMR or 0) > 0 and myRow.postmatchMMR
-                or (mmrCount[ourSide] > 0 and math.floor(mmrSum[ourSide] / mmrCount[ourSide] + 0.5) or nil),
-        }
-        local enemySide = 1 - ourSide
-        if mmrCount[enemySide] > 0 then
-            ratings[enemySide] = {
-                rating = math.floor(mmrSum[enemySide] / mmrCount[enemySide] + 0.5),
+        local change = tonumber(myRow.ratingChange)
+        -- Ignore implausibly small "absolute" ratings (mis-read deltas).
+        local oldR = PositiveNumber(myRow.rating)
+        if oldR and oldR < 500 then oldR = nil end
+        local newR = oldR and (oldR + (change or 0)) or nil
+        if not oldR then
+            local personal = self:PersonalBracketRating()
+            if personal then
+                newR = personal
+                oldR = change and (personal - change) or personal
+                if oldR and oldR <= 0 then oldR = nil end
+            end
+        end
+        local ourMmr = (myRow.postmatchMMR or 0) > 0 and myRow.postmatchMMR
+            or (mmrCount[ourSide] > 0 and math.floor(mmrSum[ourSide] / mmrCount[ourSide] + 0.5) or nil)
+        if (newR and newR > 0) or (ourMmr and ourMmr > 0) then
+            ratings = {}
+            ratings[ourSide] = {
+                oldRating = oldR,
+                newRating = newR or oldR,
+                rating = ourMmr,
             }
+            local enemySide = 1 - ourSide
+            if mmrCount[enemySide] > 0 then
+                ratings[enemySide] = {
+                    rating = math.floor(mmrSum[enemySide] / mmrCount[enemySide] + 0.5),
+                }
+            end
         end
     end
     return ratings
@@ -765,15 +863,33 @@ function Recorder:DebugRatings()
     addon:Print(("  winner=%s, scores=%s"):format(
         tostring(GetBattlefieldWinner and GetBattlefieldWinner()),
         tostring(GetNumBattlefieldScores and GetNumBattlefieldScores())))
-    -- Per-player: GetScoreInfo keys + GetBattlefieldScore trailing returns.
-    if GetNumBattlefieldScores then
+    if GetPersonalRatedInfo then
+        for _, size in ipairs({ 2, 3, 5 }) do
+            local idx = BracketRatedIndex(size)
+            local cr = idx and GetPersonalRatedInfo(idx)
+            addon:Print(("  GetPersonalRatedInfo(%dv%d idx=%s): %s"):format(
+                size, size, tostring(idx), tostring(cr)))
+        end
+    else
+        addon:Print("  GetPersonalRatedInfo: API not present")
+    end
+    if not (C_PvP and C_PvP.GetScoreInfo) then
+        addon:Print("  C_PvP.GetScoreInfo: API not present")
+    end
+    if GetNumBattlefieldScores and GetBattlefieldScore then
         for i = 1, GetNumBattlefieldScores() do
-            local name, _, _, _, _, faction, _, _, _, _, _, _,
-                bgRating, ratingChange, preMatchMMR, mmrChange = GetBattlefieldScore(i)
-            addon:Print(("  GetBattlefieldScore(%d): %s team=%s bgRating=%s change=%s preMMR=%s mmrChange=%s"):format(
-                i, tostring(name), tostring(faction),
-                tostring(bgRating), tostring(ratingChange),
-                tostring(preMatchMMR), tostring(mmrChange)))
+            local n = select("#", GetBattlefieldScore(i))
+            local parts = {}
+            for ri = 1, math.max(n, 1) do
+                parts[ri] = tostring(select(ri, GetBattlefieldScore(i)))
+            end
+            addon:Print(("  GetBattlefieldScore(%d) n=%d: %s"):format(i, n, table.concat(parts, " | ")))
+            local name, _, _, faction, _, classToken, dmg, heal, bgRating, change, preMMR, mmrChange =
+                UnpackBattlefieldScore(i)
+            addon:Print(("  unpacked(%d): %s team=%s class=%s dmg=%s heal=%s rating=%s change=%s preMMR=%s mmrCh=%s"):format(
+                i, tostring(name), tostring(faction), tostring(classToken),
+                tostring(dmg), tostring(heal), tostring(bgRating), tostring(change),
+                tostring(preMMR), tostring(mmrChange)))
             if C_PvP and C_PvP.GetScoreInfo then
                 local info = C_PvP.GetScoreInfo(i)
                 if type(info) == "table" then
@@ -783,20 +899,22 @@ function Recorder:DebugRatings()
                     end
                     table.sort(keys)
                     addon:Print(("  GetScoreInfo(%d): %s"):format(i, table.concat(keys, " ")))
-                else
-                    addon:Print(("  GetScoreInfo(%d): %s"):format(i, tostring(info)))
                 end
             end
         end
-        if not (C_PvP and C_PvP.GetScoreInfo) then
-            addon:Print("  C_PvP.GetScoreInfo: API not present")
-        end
+    elseif not GetBattlefieldScore then
+        addon:Print("  GetBattlefieldScore: API not present")
     end
     local collected = self:RatingsFromScoreboard(self:CollectScoreboard())
     if collected then
-        addon:Print("  RatingsFromScoreboard: OK (would fill Rating/MMR columns)")
+        local record = current or self.lastRecord
+        local side = record and record.ourSide
+        local ours = side ~= nil and collected[side]
+        addon:Print(("  RatingsFromScoreboard: OK old=%s new=%s mmr=%s"):format(
+            tostring(ours and ours.oldRating), tostring(ours and ours.newRating),
+            tostring(ours and ours.rating)))
     else
-        addon:Print("  RatingsFromScoreboard: nil (no usable personal rating yet)")
+        addon:Print("  RatingsFromScoreboard: nil (no usable personal rating/MMR yet)")
     end
 end
 

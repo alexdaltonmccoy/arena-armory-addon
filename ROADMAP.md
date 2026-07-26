@@ -47,12 +47,27 @@ companion (`C:\dev\arena-armory-desktop`), and the web app / API
 
 ## Next up
 
+- **Phase 3 — PvP first, then PvE** (Anniversary dates from
+  [Blizzard](https://news.blizzard.com/en-us/article/24291476/bcc-anniversary-edition-black-temple-arrives-august-27)):
+  - **Aug 18** — Arena Season 2 ends (weekly restarts); leftover AP → honor (1:10).
+  - **Aug 27, 3:00 pm PDT** — Phase 3 raids/hubs/Epic Gems (BT, Hyjal, Netherwing).
+  - **Sep 1** — Arena Season 3 starts (weekly restarts); Vengeful gear vendors.
+  - **Priority 1 (before Sep 1):** `tbc-p3` **PvP** BiS + guide-content (Vengeful),
+    extend `data/pvpCosts.ts` with S3 arena-point / honor vendor costs, update
+    Upgrades + class guides, flip PvP lists to Season 3 when ready.
+  - **Priority 2 (after PvP):** `tbc-p3` **PvE** BiS/guides (BT / Hyjal), epic
+    gem recommendations on gearing tabs.
+  Honor/marks costs for Veteran’s / medallions already show on **Upgrades** +
+  class-guide Gearing.
 - **Match result scoreboards (high-level)** - on each match detail page,
   alongside (or above) coaching narrative ("what went right / wrong / next"),
   show winner-vs-loser tables for high-level metrics: damage done, CC done,
   healing, etc. — team totals and per-player rows. Same view when drilling
   into a vs-comp (e.g. vs RMP): aggregate those high-level stats across games
   vs that composition, not only W/L and tips.
+- **PvP Overview stat categories** - under coaching tips: bracket-scoped
+  aggregates (e.g. DPS, trinket forced under 1 min) that change with Overall /
+  2s / 3s / 5s. Later: per-match and key-matchup cards.
 - **Profile / matchup stats (high-level)** - on public/claimed profile (and
   character PvP overview): rating and high-level performance summary by
   bracket (2s / 3s / 5s) and by matchup (vs RMP, etc.), built from the same
@@ -78,6 +93,10 @@ companion (`C:\dev\arena-armory-desktop`), and the web app / API
 
 ## Later
 
+- **Blog / news (SEO)** - lightweight `/blog` (or `/news`) for patch notes,
+  Season 3 prep, gearing explainers, and internal links into guides/comps/
+  character pages. Keep it simple (MD/JSON posts or CMS-lite); prioritize
+  after PvP S3 lists ship so launch content has somewhere to land.
 - **Comp standards (optional / lower priority)** - "in this matchup this class
   typically does X damage" style baselines vs the field; only after per-match
   and vs-comp scoreboards exist and prove useful. Easy to overfit or feel
