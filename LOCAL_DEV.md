@@ -37,6 +37,44 @@ Syntax check from repo root (optional):
 node .tools/check-lua.js
 ```
 
+## Diagnosing announcer (voice clips)
+
+Callouts play shipped `ArenaArmory/Media/Voice/*.ogg` via `PlaySoundFile`
+(GladiatorlosSA-style). TTS is optional and off by default. Unpackaged
+checkouts (version `dev`) turn chat tracing on automatically.
+
+Regenerate clips (Google Chirp3-HD female, arena pace):
+
+```powershell
+$env:GOOGLE_CLOUD_PROJECT = "wow-classic-armory-production"
+python scripts/generate-voice-pack.py --voice en-US-Chirp3-HD-Aoede --rate 1.35
+```
+
+In a skirmish (or any arena):
+
+```
+/aa announcer
+/aa announcer debug
+/aa announcer test
+```
+
+- **`/aa announcer`** — dumps flags, sound channel, `inArena`, build id.
+- **`/aa announcer debug`** — traces CLEU/cast triggers and `PlaySoundFile`.
+- **`/aa announcer test`** — plays `trinket.ogg` (confirm Master volume).
+- **`/aa announcer off`** — stop the chat spam.
+
+What to look for:
+
+1. `build=voice1` missing after `/reload` → wrong AddOns folder / no junction.
+2. `PlaySoundFile ... willPlay=nil` → bad path or Master volume muted.
+3. `MISS: bubble from X not in guid map` → enemy not mapped to `arenaN` yet.
+4. CLEU with `sound=nil` for Bubble/Blind → spell rank missing from
+   `AA.ANNOUNCE_SPELLS` in `Data/Spells.lua`.
+5. No CLEU lines when enemies cast → not in arena (`instanceType` should be
+   `arena`) or CLEU fan-out issue.
+
+Paste the dump + a few debug lines from a skirmish when filing a bug.
+
 ## Diagnosing blank Rating / MMR columns
 
 Wins/losses and comps can record while Rating/MMR stay `-` if personal rating

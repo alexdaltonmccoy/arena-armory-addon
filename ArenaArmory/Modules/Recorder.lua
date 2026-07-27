@@ -68,17 +68,46 @@ local function PlayerSpec()
     return bestName
 end
 
-local function DetectBracket()
-    if GetBattlefieldStatus then
-        for i = 1, (GetMaxBattlefieldID and GetMaxBattlefieldID() or 3) do
-            local status, _, _, _, _, teamSize = GetBattlefieldStatus(i)
-            if status == "active" and teamSize and teamSize > 0 then
-                return teamSize
+-- Anniversary may expose either Classic or modern GetBattlefieldStatus shapes:
+--   Classic: status, map, instanceID, min, max, teamSize, registeredMatch
+--   Modern:  status, map, teamSize, registeredMatch, ...
+-- registeredMatch is true/1 for rated arena, false/0 for skirmish.
+local function ActiveArenaQueue()
+    if not GetBattlefieldStatus then return nil, nil end
+    for i = 1, (GetMaxBattlefieldID and GetMaxBattlefieldID() or 3) do
+        local status, _, a3, a4, _, a6, a7 = GetBattlefieldStatus(i)
+        if status == "active" then
+            local teamSize, registered
+            if type(a6) == "number" and (a6 == 0 or a6 == 2 or a6 == 3 or a6 == 5) then
+                teamSize, registered = a6, a7
+            elseif type(a3) == "number" then
+                teamSize, registered = a3, a4
             end
+            local rated = registered == true or registered == 1
+            return teamSize, rated
         end
     end
-    -- Fallback: count our side.
+    return nil, nil
+end
+
+local function DetectBracket()
+    local teamSize = ActiveArenaQueue()
+    if teamSize and teamSize > 0 then return teamSize end
+    -- Skirmishes often report teamSize 0; fall back to group size.
     return math.max(GetNumGroupMembers and GetNumGroupMembers() or 1, 1)
+end
+
+local function DetectRated()
+    local _, rated = ActiveArenaQueue()
+    if rated ~= nil then return rated end
+    if C_PvP and C_PvP.IsRatedArena then
+        return not not C_PvP.IsRatedArena()
+    end
+    if IsActiveBattlefieldArena then
+        local _, isRated = IsActiveBattlefieldArena()
+        if isRated ~= nil then return not not isRated end
+    end
+    return nil -- unknown
 end
 
 -------------------------------------------------------------------------------
@@ -101,6 +130,7 @@ function Recorder:OnArenaJoined()
         startClock = GetTime(),
         map = mapName,
         bracket = DetectBracket(),
+        rated = DetectRated(), -- false = skirmish; nil = unknown
         player = { name = playerName, realm = realmName, class = playerClass, spec = PlayerSpec() },
         team = {},
         enemyTeam = {},
@@ -531,9 +561,12 @@ end
 
 -- Post-match personal CR for the current bracket (scoreboard often only
 -- shows rating *change* + matchmaking value, not absolute CR).
+-- Never call for skirmishes — GetPersonalRatedInfo is your standing CR and
+-- would stamp 2s/3s onto unrated games as "1653 +0".
 function Recorder:PersonalBracketRating()
     if not GetPersonalRatedInfo then return nil end
     local record = current or self.lastRecord
+    if record and record.rated == false then return nil end
     local size = record and record.bracket
     if not size or size < 1 then
         local n = GetNumBattlefieldScores and GetNumBattlefieldScores() or 0
@@ -601,12 +634,18 @@ function Recorder:CollectScoreboard()
 end
 
 -- Builds the team-shaped `ratings` record from per-player scoreboard data.
--- CR from scoreboard bgRating when present; otherwise GetPersonalRatedInfo
--- (post-match) minus ratingChange. MMR is the per-side average of
+-- CR from scoreboard bgRating when present; for rated games only, fall back
+-- to GetPersonalRatedInfo (post-match) minus ratingChange. Skirmishes must
+-- not invent CR from personal standing. MMR is the per-side average of
 -- Matchmaking Value (prematchMMR).
 function Recorder:RatingsFromScoreboard(rows)
     if type(rows) ~= "table" then return nil end
     local record = current or self.lastRecord
+    -- Re-probe rated flag while the scoreboard is still up (join-time detect
+    -- can miss skirmish teamSize=0 queues).
+    if record and record.rated == nil then
+        record.rated = DetectRated()
+    end
     local me = record and record.player and record.player.name
     if not me and UnitName then
         me = AA.StripRealm(UnitName("player"))
@@ -632,13 +671,20 @@ function Recorder:RatingsFromScoreboard(rows)
         local oldR = PositiveNumber(myRow.rating)
         if oldR and oldR < 500 then oldR = nil end
         local newR = oldR and (oldR + (change or 0)) or nil
-        if not oldR then
+        -- Personal CR fallback: rated matches only, and only when the
+        -- scoreboard reported a real rating delta (skirmishes often show 0).
+        local rated = record and record.rated
+        if not oldR and rated ~= false and change and change ~= 0 then
             local personal = self:PersonalBracketRating()
             if personal then
                 newR = personal
-                oldR = change and (personal - change) or personal
+                oldR = personal - change
                 if oldR and oldR <= 0 then oldR = nil end
             end
+        end
+        -- Skirmish / unrated: never keep a CR with +0 change from standing.
+        if rated == false then
+            oldR, newR = nil, nil
         end
         local ourMmr = (myRow.postmatchMMR or 0) > 0 and myRow.postmatchMMR
             or (mmrCount[ourSide] > 0 and math.floor(mmrSum[ourSide] / mmrCount[ourSide] + 0.5) or nil)
@@ -734,6 +780,9 @@ function Recorder:Finalize(winner)
     -- can be empty/stale when the winner is first known.
     if RequestBattlefieldScoreData then RequestBattlefieldScoreData() end
     current.scoreboard = self:CollectScoreboard()
+    -- Prefer end-of-match rated detection (join-time can miss skirmishes).
+    local ratedNow = DetectRated()
+    if ratedNow ~= nil then current.rated = ratedNow end
     -- Team-info APIs first (they carry team names), then per-player
     -- scoreboard ratings (the only source on Anniversary, where arena
     -- teams don't exist and team info reports zeros).

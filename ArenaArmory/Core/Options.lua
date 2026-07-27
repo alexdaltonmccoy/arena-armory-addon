@@ -143,10 +143,26 @@ local options = {
             type = "group", order = 16, name = "Announcer",
             args = {
                 enabled = { type = "toggle", order = 1, name = "Enable announcer" },
-                useTTS = { type = "toggle", order = 2, name = "Use text-to-speech" },
+                useSounds = {
+                    type = "toggle", order = 2, name = "Play voice clips",
+                    desc = "GladiatorlosSA-style callouts from Media/Voice/*.ogg (recommended).",
+                },
+                channel = {
+                    type = "select", order = 2.1, name = "Sound channel",
+                    desc = "Master ignores most volume mixers except the master slider.",
+                    values = {
+                        Master = "Master",
+                        SFX = "Sound Effects",
+                        Dialog = "Dialog",
+                    },
+                },
+                useTTS = {
+                    type = "toggle", order = 2.2, name = "Also use text-to-speech",
+                    desc = "Optional. Anniversary TTS is unreliable; voice clips are the primary channel.",
+                },
                 voice = {
-                    type = "select", order = 2.5, name = "Voice",
-                    desc = "Which installed text-to-speech voice to use. Automatic tries them until one works.",
+                    type = "select", order = 2.3, name = "TTS voice",
+                    desc = "Only used when text-to-speech is enabled.",
                     values = function()
                         local t = { auto = "Automatic" }
                         for _, v in ipairs(AA.GetTtsVoices()) do
@@ -155,9 +171,22 @@ local options = {
                         return t
                     end,
                 },
+                alertSound = {
+                    type = "toggle", order = 2.4, name = "Beep if clip missing",
+                    desc = "Play a raid-warning beep when a voice clip fails and TTS is off.",
+                },
+                raidWarning = {
+                    type = "toggle", order = 2.5, name = "Raid warning text",
+                    desc = "Also flash the callout as a raid warning on screen.",
+                },
                 trinket = { type = "toggle", order = 3, name = "Announce trinket" },
                 drink = { type = "toggle", order = 4, name = "Announce drinking" },
-                casts = { type = "toggle", order = 5, name = "Announce CC casts" },
+                casts = { type = "toggle", order = 5, name = "Announce CC",
+                    desc = "Polymorph, Blind, Fear, Cyclone, etc." },
+                cooldowns = { type = "toggle", order = 5.5, name = "Announce major cooldowns",
+                    desc = "Bubble, Ice Block, Cloak, Evasion, NS, Grounding, etc." },
+                interrupts = { type = "toggle", order = 5.7, name = "Announce interrupts",
+                    desc = "Kick, Pummel, Counterspell, Spell Lock (noisy; off by default)." },
                 resurrect = { type = "toggle", order = 6, name = "Announce resurrects" },
                 lowHealth = { type = "toggle", order = 7, name = "Announce low health" },
                 lowHealthThreshold = {
@@ -166,18 +195,20 @@ local options = {
                 },
                 test = {
                     type = "execute", order = 9, name = "Test voice",
-                    desc = "Plays a sample announcement so you can hear the text-to-speech voice and volume.",
+                    desc = "Plays the trinket voice clip (and TTS if enabled).",
                     func = function()
-                        local voices = AA.GetTtsVoices()
-                        if #voices == 0 then
-                            addon:Print("No text-to-speech voices found. Check Options > Accessibility > Text-to-Speech in WoW, and that Windows has a voice installed.")
-                        else
-                            for _, v in ipairs(voices) do
-                                addon:Print(("Voice %d: %s"):format(v.voiceID or -1, v.name or "?"))
-                            end
-                        end
-                        AA.Announcer:Speak("Enemy trinket used", true)
+                        AA.Announcer:Announce("trinket", "Trinket", true)
                     end,
+                },
+                debugDump = {
+                    type = "execute", order = 10, name = "Dump announcer status",
+                    desc = "Prints announcer state to chat. Also: /aa announcer",
+                    func = function() AA.Announcer:DumpStatus() end,
+                },
+                debugToggle = {
+                    type = "execute", order = 11, name = "Toggle announcer debug",
+                    desc = "Chat-traces every announce attempt / miss. Also: /aa announcer debug",
+                    func = function() AA.Announcer:SetDebug(not AA.Announcer.debug) end,
                 },
             },
         },
@@ -260,6 +291,20 @@ addon:RegisterChatCommand("aa", function(input)
         addon:Print(("Matches stored: %d"):format(AA.Recorder:GetMatchCount()))
     elseif command == "ratings" then
         AA.Recorder:DebugRatings()
+    elseif command == "announcer" or command == "aaudio" then
+        local sub = (rest or ""):lower():match("^(%S*)") or ""
+        if sub == "debug" or sub == "on" then
+            AA.Announcer:SetDebug(true)
+        elseif sub == "off" then
+            AA.Announcer:SetDebug(false)
+        elseif sub == "test" then
+            AA.Announcer:Announce("trinket", "Trinket", true)
+        elseif sub == "toggle" then
+            AA.Announcer:SetDebug(not AA.Announcer.debug)
+        else
+            AA.Announcer:DumpStatus()
+            addon:Print("Also: /aa announcer debug | off | test")
+        end
     elseif command == "stats" then
         AA.Analytics:Toggle()
     elseif command == "web" then

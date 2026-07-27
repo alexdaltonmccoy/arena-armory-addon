@@ -1,15 +1,21 @@
--- Audio announcer (GladiatorlosSA-style) using built-in text-to-speech.
+-- Audio announcer (GladiatorlosSA-style) using shipped Media/Voice/*.ogg clips.
+-- Optional TTS remains as a fallback for users who want it.
 local _, AA = ...
 local addon = AA.addon
 
 local Announcer = addon:NewModule("Announcer", "AceEvent-3.0")
 AA.Announcer = Announcer
 
-local lastSpoken = {}      -- message -> last GetTime() (anti-spam)
+local lastSpoken = {}      -- key -> last GetTime() (anti-spam)
 local drinkAnnounced = {}  -- arena index -> true while drinking
 local lowHpAnnounced = {}  -- arena index -> last announce time
 
-local SPAM_WINDOW = 3
+local SPAM_WINDOW = 2.5
+local VOICE_PATH = "Interface\\AddOns\\ArenaArmory\\Media\\Voice\\"
+
+-- Session-only; toggled with /aa announcer debug (or auto-on for unpackaged "dev").
+Announcer.debug = false
+Announcer.build = "voice1"
 
 function AA.GetTtsVoices()
     if C_VoiceChat and C_VoiceChat.GetTtsVoices then
@@ -22,10 +28,11 @@ function AA.GetTtsVoiceCount()
     return #AA.GetTtsVoices()
 end
 
--- Picks a voice: the user's Announcer choice, then a voice that already
--- worked this session, then WoW's Accessibility setting, then the first
--- installed voice. Only IDs present in the installed-voice list are used,
--- because the client silently plays nothing for invalid IDs.
+function Announcer:DebugPrint(msg)
+    if not self.debug then return end
+    addon:Print("|cff66ccff[Announcer]|r " .. tostring(msg))
+end
+
 function Announcer:ResolveVoiceID()
     local voices = AA.GetTtsVoices()
     local valid = {}
@@ -44,65 +51,116 @@ function Announcer:ResolveVoiceID()
     return first and first.voiceID or nil
 end
 
-function Announcer:SpeakWith(voiceID, msg)
-    local dest = 1 -- LocalPlayback
-    if Enum and Enum.VoiceTtsDestination then
-        dest = Enum.VoiceTtsDestination.QueuedLocalPlayback
-            or Enum.VoiceTtsDestination.LocalPlayback or 1
-    end
+function Announcer:SpeakTTS(msg)
+    if not (C_VoiceChat and C_VoiceChat.SpeakText) then return end
+    local voiceID = self:ResolveVoiceID()
+    if not voiceID then return end
+    local rate, volume = 0, 100
     self.lastVoiceID = voiceID
     self.lastMsg = msg
-    C_VoiceChat.SpeakText(voiceID, msg, dest, 0, 100)
+    -- Anniversary / Midnight: SpeakText(voiceID, text, rate, volume)
+    if Enum and Enum.VoiceTtsDestination and Enum.VoiceTtsDestination.LocalPlayback
+        and self.ttsApi == "legacy" then
+        local dest = Enum.VoiceTtsDestination.QueuedLocalPlayback
+            or Enum.VoiceTtsDestination.LocalPlayback or 1
+        C_VoiceChat.SpeakText(voiceID, msg, dest, rate, volume)
+    else
+        self.ttsApi = "modern"
+        C_VoiceChat.SpeakText(voiceID, msg, rate, volume)
+    end
 end
 
--- The client reports per-utterance status asynchronously; some installed
--- voice IDs fail silently, so on failure we retry the message once per
--- remaining voice and remember whichever one actually works.
 function Announcer:OnTtsUpdate(_, status)
-    local ok = status == 0 or status == 6 or status == 9 -- Success / Enqueued / EnqueueNotNecessary
+    local ok = status == 0 or status == 6 or status == 9
     if ok then
         self.workingVoiceID = self.lastVoiceID
         wipe(self.badVoices)
         return
     end
-
     local msg = self.lastMsg
     if not msg or not self.lastVoiceID then return end
+    if self.ttsApi ~= "legacy" and Enum and Enum.VoiceTtsDestination
+        and Enum.VoiceTtsDestination.LocalPlayback ~= nil then
+        self.ttsApi = "legacy"
+        self:SpeakTTS(msg)
+        return
+    end
     self.badVoices[self.lastVoiceID] = true
     self.lastMsg = nil
-
     for _, v in ipairs(AA.GetTtsVoices()) do
         if v.voiceID and not self.badVoices[v.voiceID] then
-            self:SpeakWith(v.voiceID, msg)
+            self:SpeakTTS(msg)
             return
         end
     end
-    addon:Print(("Text-to-speech failed on every installed voice (last status %d). Falling back to alert sound."):format(status))
-    PlaySound(SOUNDKIT and SOUNDKIT.RAID_WARNING or 8959, "Master")
 end
 
-function Announcer:Speak(msg, force)
+-- Play a voice clip by key (Media/Voice/<key>.ogg). Returns true if PlaySoundFile
+-- accepted the request (file missing still returns nil/false on some clients).
+function Announcer:PlayVoice(soundKey)
+    if not soundKey or not PlaySoundFile then return false end
+    local path = VOICE_PATH .. soundKey .. ".ogg"
+    local channel = (AA.db.profile.announcer.channel) or "Master"
+    local willPlay = PlaySoundFile(path, channel)
+    self:DebugPrint(("PlaySoundFile build=%s key=%s channel=%s willPlay=%s"):format(
+        self.build, tostring(soundKey), tostring(channel), tostring(willPlay)))
+    return willPlay and true or false
+end
+
+-- Primary announce entry: sound clip + optional TTS + raid warning.
+-- `key` is used for anti-spam (usually the sound key).
+function Announcer:Announce(soundKey, text, force)
     local cfg = AA.db.profile.announcer
-    if not cfg.enabled then return end
-
-    local now = GetTime()
-    if not force and lastSpoken[msg] and (now - lastSpoken[msg]) < SPAM_WINDOW then return end
-    lastSpoken[msg] = now
-
-    local spoken = false
-    if cfg.useTTS and C_VoiceChat and C_VoiceChat.SpeakText then
-        local voiceID = self:ResolveVoiceID()
-        if voiceID then
-            self:SpeakWith(voiceID, msg)
-            spoken = true
-        end
+    if not cfg.enabled then
+        self:DebugPrint(("Announce skipped (disabled): %s"):format(tostring(soundKey)))
+        return
     end
-    if not spoken then
+
+    text = text or (soundKey and AA.VOICE_TEXT and AA.VOICE_TEXT[soundKey]) or soundKey
+    local spamKey = soundKey or text
+    local now = GetTime()
+    if not force and lastSpoken[spamKey] and (now - lastSpoken[spamKey]) < SPAM_WINDOW then
+        self:DebugPrint(("Announce skipped (spam): %s"):format(tostring(spamKey)))
+        return
+    end
+    lastSpoken[spamKey] = now
+
+    local played = false
+    if cfg.useSounds ~= false and soundKey then
+        played = self:PlayVoice(soundKey)
+    end
+
+    -- Optional TTS (off by default — Anniversary TTS is unreliable).
+    if cfg.useTTS and text then
+        self:SpeakTTS(text)
+    end
+
+    -- Beep only when voice clip failed / disabled and TTS is off.
+    if not played and not cfg.useTTS and cfg.alertSound then
         PlaySound(SOUNDKIT and SOUNDKIT.RAID_WARNING or 8959, "Master")
     end
-    if RaidNotice_AddMessage and RaidWarningFrame then
-        RaidNotice_AddMessage(RaidWarningFrame, msg, ChatTypeInfo["RAID_WARNING"])
+
+    if cfg.raidWarning ~= false and text and RaidNotice_AddMessage and RaidWarningFrame then
+        RaidNotice_AddMessage(RaidWarningFrame, text, ChatTypeInfo["RAID_WARNING"])
     end
+end
+
+-- Back-compat for /aa announcer test and older call sites.
+function Announcer:Speak(msg, force)
+    if msg == "Enemy trinket used" or msg == "Trinket" then
+        self:Announce("trinket", "Trinket", force)
+        return
+    end
+    -- Best-effort: match voice text -> sound key
+    if AA.VOICE_TEXT then
+        for key, label in pairs(AA.VOICE_TEXT) do
+            if label == msg then
+                self:Announce(key, msg, force)
+                return
+            end
+        end
+    end
+    self:Announce(nil, msg, force)
 end
 
 local function OpponentLabel(i)
@@ -115,44 +173,90 @@ local function OpponentLabel(i)
     return "Enemy " .. i
 end
 
+local function SpellLabel(spellId)
+    if not spellId then return "?" end
+    local name = AA.GetSpellName and AA.GetSpellName(spellId)
+    return name or tostring(spellId)
+end
+
+local function CategoryEnabled(cfg, cat)
+    if cat == "cooldown" then return cfg.cooldowns ~= false end
+    if cat == "interrupt" then return cfg.interrupts end
+    return cfg.casts ~= false -- cc / default
+end
+
 -------------------------------------------------------------------------------
 -- Triggers
 -------------------------------------------------------------------------------
 
 function Announcer:OnTrinketUsed(_, i)
-    if AA.testMode then return end -- test-mode refreshes would spam it
-    if AA.db.profile.announcer.trinket then
-        self:Speak(OpponentLabel(i) .. " trinket used", true)
+    if AA.testMode then
+        self:DebugPrint(("trinket ignored in test mode (arena%d)"):format(i or -1))
+        return
     end
+    if AA.db.profile.announcer.trinket then
+        self:Announce("trinket", "Trinket", true)
+    else
+        self:DebugPrint(("trinket used arena%d but trinket announce off"):format(i or -1))
+    end
+end
+
+function Announcer:TryAnnounceSpell(spellId, source)
+    local entry = spellId and AA.ANNOUNCE_SPELLS and AA.ANNOUNCE_SPELLS[spellId]
+    if not entry then return false end
+    local cfg = AA.db.profile.announcer
+    if not CategoryEnabled(cfg, entry.cat) then
+        self:DebugPrint(("spell %s (%s) skipped cat=%s"):format(
+            tostring(spellId), tostring(entry.sound), tostring(entry.cat)))
+        return false
+    end
+    local text = AA.VOICE_TEXT and AA.VOICE_TEXT[entry.sound] or entry.sound
+    self:DebugPrint(("announce %s spell=%s via %s"):format(
+        tostring(entry.sound), tostring(spellId), tostring(source)))
+    self:Announce(entry.sound, text)
+    return true
 end
 
 function Announcer:OnCastStart(_, unit, _, spellId)
     local i = AA.ArenaIndex(unit)
     if not i then return end
-    local cfg = AA.db.profile.announcer
 
-    local label = spellId and AA.ANNOUNCE_CASTS[spellId]
-    if label and cfg.casts then
-        self:Speak(label)
-        return
-    end
-    local resLabel = spellId and AA.ANNOUNCE_RES[spellId]
-    if resLabel and cfg.resurrect then
-        self:Speak("Resurrecting", true)
+    if self:TryAnnounceSpell(spellId, "CAST_START") then return end
+
+    local resKey = spellId and AA.ANNOUNCE_RES and AA.ANNOUNCE_RES[spellId]
+    if resKey and AA.db.profile.announcer.resurrect then
+        self:Announce(resKey, AA.VOICE_TEXT and AA.VOICE_TEXT[resKey] or "Resurrect", true)
     end
 end
 
-function Announcer:OnCLEU(_, _, subevent, sourceGUID, _, _, _, _, _, spellId)
+function Announcer:OnCLEU(_, _, subevent, sourceGUID, sourceName, sourceFlags, _, _, _, spellId)
     if subevent ~= "SPELL_CAST_SUCCESS" then return end
-    if not AA.db.profile.announcer.casts then return end
-    local unit = AA.UnitByGUID(sourceGUID)
-    if not unit then return end
 
-    -- Instants (Blind, Psychic Scream, ...) never fire UNIT_SPELLCAST_START.
-    local label = spellId and AA.ANNOUNCE_CASTS[spellId]
-    if label then
-        self:Speak(label)
+    local entry = spellId and AA.ANNOUNCE_SPELLS and AA.ANNOUNCE_SPELLS[spellId]
+    local unit = AA.UnitByGUID(sourceGUID)
+    local hostile = AA.IsHostilePlayerFlag and AA.IsHostilePlayerFlag(sourceFlags)
+
+    if self.debug and (entry or unit) then
+        self:DebugPrint(("CLEU SUCCESS spell=%s (%s) src=%s unit=%s hostile=%s inArena=%s sound=%s"):format(
+            tostring(spellId), SpellLabel(spellId),
+            tostring(sourceName), tostring(unit), tostring(hostile),
+            tostring(AA.inArena), tostring(entry and entry.sound)))
     end
+
+    if self.debug and entry and not unit and AA.inArena and hostile then
+        self:DebugPrint(("MISS: %s from %s not in guid map"):format(
+            entry.sound, tostring(sourceName)))
+    end
+
+    if not entry then
+        local resKey = spellId and AA.ANNOUNCE_RES and AA.ANNOUNCE_RES[spellId]
+        if resKey and unit and AA.db.profile.announcer.resurrect then
+            self:Announce(resKey, AA.VOICE_TEXT and AA.VOICE_TEXT[resKey] or "Resurrect", true)
+        end
+        return
+    end
+    if not unit then return end
+    self:TryAnnounceSpell(spellId, "CLEU")
 end
 
 function Announcer:OnUnitAura(_, unit)
@@ -171,7 +275,7 @@ function Announcer:OnUnitAura(_, unit)
 
     if drinking and not drinkAnnounced[i] then
         drinkAnnounced[i] = true
-        self:Speak(OpponentLabel(i) .. " drinking")
+        self:Announce("drinking", "Drinking")
     elseif not drinking then
         drinkAnnounced[i] = nil
     end
@@ -190,7 +294,7 @@ function Announcer:OnUnitHealth(_, unit)
     if hp / hpMax <= cfg.lowHealthThreshold then
         if not lowHpAnnounced[i] or (now - lowHpAnnounced[i]) > 10 then
             lowHpAnnounced[i] = now
-            self:Speak(OpponentLabel(i) .. " low health")
+            self:Announce("lowhealth", "Low health")
         end
     end
 end
@@ -199,10 +303,51 @@ function Announcer:Reset()
     wipe(lastSpoken)
     wipe(drinkAnnounced)
     wipe(lowHpAnnounced)
+    self:DebugPrint("reset (arena joined)")
+end
+
+function Announcer:DumpStatus()
+    local cfg = AA.db.profile.announcer
+    local _, instanceType = IsInInstance()
+    addon:Print("--- Announcer status ---")
+    addon:Print(("  build=%s version=%s debug=%s inArena=%s instanceType=%s"):format(
+        tostring(self.build), tostring(AA.version), tostring(self.debug),
+        tostring(AA.inArena), tostring(instanceType)))
+    addon:Print(("  enabled=%s useSounds=%s useTTS=%s channel=%s"):format(
+        tostring(cfg.enabled), tostring(cfg.useSounds ~= false),
+        tostring(cfg.useTTS), tostring(cfg.channel or "Master")))
+    addon:Print(("  casts=%s cooldowns=%s interrupts=%s trinket=%s drink=%s res=%s lowHP=%s"):format(
+        tostring(cfg.casts), tostring(cfg.cooldowns), tostring(cfg.interrupts),
+        tostring(cfg.trinket), tostring(cfg.drink), tostring(cfg.resurrect),
+        tostring(cfg.lowHealth)))
+    addon:Print(("  voicePath=%s"):format(VOICE_PATH))
+    addon:Print("Test: /aa announcer test   (plays trinket.ogg)")
+end
+
+function Announcer:SetDebug(on)
+    self.debug = not not on
+    addon:Print(("Announcer debug %s."):format(self.debug and "ON" or "OFF"))
+    if self.debug then
+        self:DumpStatus()
+    end
 end
 
 function Announcer:OnEnable()
     self.badVoices = {}
+    self.ttsApi = "modern"
+    -- Existing profiles still have useTTS=true from the old default; flip once
+    -- to the voice-pack primary setup.
+    local cfg = AA.db.profile.announcer
+    if not cfg.voicePackV1 then
+        cfg.useSounds = true
+        cfg.useTTS = false
+        if cfg.cooldowns == nil then cfg.cooldowns = true end
+        cfg.voicePackV1 = true
+    end
+    if AA.version == "dev" then
+        self.debug = true
+        addon:Print(("Announcer debug ON (build=%s). /aa announcer off to silence."):format(self.build))
+    end
     self:RegisterMessage("AA_TRINKET_USED", "OnTrinketUsed")
     self:RegisterMessage("AA_CLEU", "OnCLEU")
     self:RegisterMessage("AA_ARENA_JOINED", "Reset")

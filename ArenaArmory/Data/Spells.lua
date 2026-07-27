@@ -247,33 +247,234 @@ AA.SPEC_BUFFS = {
 }
 
 -------------------------------------------------------------------------------
--- Announcer: enemy cast starts worth calling out (spellID -> label)
+-- Announcer: spellID -> { sound = file key under Media/Voice/, cat = group }
+-- cat: "cc" | "cooldown" | "interrupt"  (toggled in options)
+-- Raid-warning text comes from AA.VOICE_TEXT[sound].
 -------------------------------------------------------------------------------
 
-AA.ANNOUNCE_CASTS = {
-    [12826] = "Polymorph",       -- Polymorph (top rank)
-    [28271] = "Polymorph",       -- Polymorph: Turtle
-    [28272] = "Polymorph",       -- Polymorph: Pig
-    [6215]  = "Fear",            -- Fear
-    [17928] = "Howl of Terror",
-    [33786] = "Cyclone",
-    [20066] = "Repentance",
-    [27068] = "Wyvern Sting",
-    [18658] = "Hibernate",
-    [26989] = "Entangling Roots",
-    [8129]  = "Mana Burn",
-    [27224] = "Drain Mana",
-    [6358]  = "Seduction",
-    [10890] = "Psychic Scream",  -- instant, caught via SPELL_CAST_SUCCESS
-    [2094]  = "Blind",
+AA.VOICE_TEXT = {
+    trinket = "Trinket",
+    blind = "Blind",
+    polymorph = "Polymorph",
+    fear = "Fear",
+    howl = "Howl of Terror",
+    cyclone = "Cyclone",
+    repentance = "Repentance",
+    wyvern = "Wyvern",
+    hibernate = "Hibernate",
+    roots = "Roots",
+    manaburn = "Mana Burn",
+    seduction = "Seduction",
+    psychicscream = "Psychic Scream",
+    hammer = "Hammer of Justice",
+    scatter = "Scatter",
+    freezingtrap = "Freezing Trap",
+    sap = "Sap",
+    gouge = "Gouge",
+    kidney = "Kidney Shot",
+    cheapshot = "Cheap Shot",
+    deathcoil = "Death Coil",
+    shadowfury = "Shadowfury",
+    intimidation = "Intimidating Shout",
+    silence = "Silence",
+    counterspell = "Counterspell",
+    kick = "Kick",
+    pummel = "Pummel",
+    spelllock = "Spell Lock",
+    bubble = "Bubble",
+    iceblock = "Ice Block",
+    cloak = "Cloak",
+    evasion = "Evasion",
+    vanish = "Vanish",
+    deterrence = "Deterrence",
+    bop = "Blessing of Protection",
+    painsuppression = "Pain Suppression",
+    natureswiftness = "Nature's Swiftness",
+    grounding = "Grounding",
+    spellreflection = "Spell Reflection",
+    coldblood = "Cold Blood",
+    adrenalinerush = "Adrenaline Rush",
+    bloodlust = "Bloodlust",
+    heroism = "Heroism",
+    innervate = "Innervate",
+    barkskin = "Barkskin",
+    presenceofmind = "Presence of Mind",
+    avengingwrath = "Avenging Wrath",
+    drinking = "Drinking",
+    resurrect = "Resurrect",
+    lowhealth = "Low health",
+    freedom = "Freedom",
+    divineprotection = "Divine Protection",
+    layonhands = "Lay on Hands",
+    intercept = "Intercept",
+    charge = "Charge",
+    deathwish = "Death Wish",
+    recklessness = "Recklessness",
+    berserkerrage = "Berserker Rage",
+    readiness = "Readiness",
+    beastwithin = "Beast Within",
+    petintimidation = "Intimidation",
+    silencingshot = "Silencing Shot",
+    sprint = "Sprint",
+    preparation = "Preparation",
+    shadowstep = "Shadowstep",
+    premeditation = "Premeditation",
+    stealth = "Stealth",
+    powerinfusion = "Power Infusion",
+    fearward = "Fear Ward",
+    shadowfiend = "Shadowfiend",
+    elementalmastery = "Elemental Mastery",
+    shamanisticrage = "Shamanistic Rage",
+    tremor = "Tremor Totem",
+    manatide = "Mana Tide",
+    icyveins = "Icy Veins",
+    arcanepower = "Arcane Power",
+    combustion = "Combustion",
+    coldsnap = "Cold Snap",
+    blink = "Blink",
+    frostnova = "Frost Nova",
+    dragonsbreath = "Dragon's Breath",
+    spellsteal = "Spellsteal",
+    feldomination = "Fel Domination",
+    soulstone = "Soulstone",
+    bash = "Bash",
+    feralcharge = "Feral Charge",
+    wotf = "Will of the Forsaken",
+    warstomp = "War Stomp",
+    stoneform = "Stoneform",
+    escapeartist = "Escape Artist",
 }
+
+local function A(sound, cat)
+    return { sound = sound, cat = cat or "cc" }
+end
+
+AA.ANNOUNCE_SPELLS = {
+    -- CC / control
+    [118] = A("polymorph"), [12824] = A("polymorph"), [12825] = A("polymorph"),
+    [12826] = A("polymorph"), [28271] = A("polymorph"), [28272] = A("polymorph"),
+    [5782] = A("fear"), [6213] = A("fear"), [6215] = A("fear"),
+    [5484] = A("howl"), [17928] = A("howl"),
+    [33786] = A("cyclone"),
+    [20066] = A("repentance"),
+    [19386] = A("wyvern"), [24132] = A("wyvern"), [24133] = A("wyvern"), [27068] = A("wyvern"),
+    [2637] = A("hibernate"), [18657] = A("hibernate"), [18658] = A("hibernate"),
+    [339] = A("roots"), [1062] = A("roots"), [5195] = A("roots"), [5196] = A("roots"),
+    [9852] = A("roots"), [9853] = A("roots"), [26989] = A("roots"),
+    [8129] = A("manaburn"), [27224] = A("manaburn"), -- Drain Mana uses same callout
+    [6358] = A("seduction"),
+    [8122] = A("psychicscream"), [8124] = A("psychicscream"),
+    [10888] = A("psychicscream"), [10890] = A("psychicscream"),
+    [2094] = A("blind"),
+    [853] = A("hammer"), [5588] = A("hammer"), [5589] = A("hammer"), [10308] = A("hammer"),
+    [19503] = A("scatter"),
+    [1499] = A("freezingtrap"), [14310] = A("freezingtrap"), [14311] = A("freezingtrap"),
+    [6770] = A("sap"), [2070] = A("sap"), [11297] = A("sap"),
+    [1776] = A("gouge"), [1777] = A("gouge"), [8629] = A("gouge"),
+    [11285] = A("gouge"), [11286] = A("gouge"), [38764] = A("gouge"),
+    [408] = A("kidney"), [8643] = A("kidney"),
+    [1833] = A("cheapshot"),
+    [6789] = A("deathcoil"), [17925] = A("deathcoil"), [17926] = A("deathcoil"), [27223] = A("deathcoil"),
+    [30283] = A("shadowfury"), [30413] = A("shadowfury"), [30414] = A("shadowfury"),
+    [5246] = A("intimidation"),
+    [15487] = A("silence"),
+
+    -- Interrupts
+    [2139] = A("counterspell", "interrupt"),
+    [1766] = A("kick", "interrupt"), [1767] = A("kick", "interrupt"),
+    [1768] = A("kick", "interrupt"), [1769] = A("kick", "interrupt"), [38768] = A("kick", "interrupt"),
+    [6552] = A("pummel", "interrupt"), [6554] = A("pummel", "interrupt"),
+    [19244] = A("spelllock", "interrupt"), [19647] = A("spelllock", "interrupt"),
+
+    -- More CC / control
+    [5211] = A("bash"), [6798] = A("bash"), [8983] = A("bash"),
+    [122] = A("frostnova"), [865] = A("frostnova"), [6131] = A("frostnova"), [10230] = A("frostnova"),
+    [27088] = A("frostnova"),
+    [31661] = A("dragonsbreath"), [33041] = A("dragonsbreath"), [33042] = A("dragonsbreath"),
+    [33043] = A("dragonsbreath"),
+    [20549] = A("warstomp"),
+
+    -- Interrupts (extra)
+    [34490] = A("silencingshot", "interrupt"),
+
+    -- Major cooldowns
+    [642] = A("bubble", "cooldown"), [1020] = A("bubble", "cooldown"), -- Divine Shield ranks
+    [498] = A("divineprotection", "cooldown"), -- Divine Protection
+    [45438] = A("iceblock", "cooldown"),
+    [31224] = A("cloak", "cooldown"),
+    [5277] = A("evasion", "cooldown"), [26669] = A("evasion", "cooldown"),
+    [1856] = A("vanish", "cooldown"), [1857] = A("vanish", "cooldown"), [26889] = A("vanish", "cooldown"),
+    [19263] = A("deterrence", "cooldown"),
+    [1022] = A("bop", "cooldown"), [5599] = A("bop", "cooldown"), [10278] = A("bop", "cooldown"),
+    [1044] = A("freedom", "cooldown"), -- Blessing of Freedom
+    [633] = A("layonhands", "cooldown"), [2800] = A("layonhands", "cooldown"),
+    [10310] = A("layonhands", "cooldown"), [27154] = A("layonhands", "cooldown"),
+    [33206] = A("painsuppression", "cooldown"),
+    [10060] = A("powerinfusion", "cooldown"),
+    [6346] = A("fearward", "cooldown"),
+    [34433] = A("shadowfiend", "cooldown"),
+    [16188] = A("natureswiftness", "cooldown"), [17116] = A("natureswiftness", "cooldown"),
+    [8177] = A("grounding", "cooldown"),
+    [8143] = A("tremor", "cooldown"), -- Tremor Totem
+    [16190] = A("manatide", "cooldown"), -- Mana Tide Totem
+    [16166] = A("elementalmastery", "cooldown"),
+    [30823] = A("shamanisticrage", "cooldown"),
+    [23920] = A("spellreflection", "cooldown"),
+    [14177] = A("coldblood", "cooldown"),
+    [13750] = A("adrenalinerush", "cooldown"),
+    [2983] = A("sprint", "cooldown"), [8696] = A("sprint", "cooldown"), [11305] = A("sprint", "cooldown"),
+    [14185] = A("preparation", "cooldown"),
+    [36554] = A("shadowstep", "cooldown"),
+    [14183] = A("premeditation", "cooldown"),
+    [1784] = A("stealth", "cooldown"), [1785] = A("stealth", "cooldown"),
+    [1786] = A("stealth", "cooldown"), [1787] = A("stealth", "cooldown"),
+    [2825] = A("bloodlust", "cooldown"),
+    [32182] = A("heroism", "cooldown"),
+    [29166] = A("innervate", "cooldown"),
+    [22812] = A("barkskin", "cooldown"),
+    [16979] = A("feralcharge", "cooldown"),
+    [12043] = A("presenceofmind", "cooldown"),
+    [12472] = A("icyveins", "cooldown"),
+    [12042] = A("arcanepower", "cooldown"),
+    [11129] = A("combustion", "cooldown"),
+    [11958] = A("coldsnap", "cooldown"),
+    [1953] = A("blink", "cooldown"),
+    [30449] = A("spellsteal", "cooldown"),
+    [31884] = A("avengingwrath", "cooldown"),
+    [20252] = A("intercept", "cooldown"), -- Intercept
+    [100] = A("charge", "cooldown"), [6178] = A("charge", "cooldown"), [11578] = A("charge", "cooldown"),
+    [12292] = A("deathwish", "cooldown"),
+    [1719] = A("recklessness", "cooldown"),
+    [18499] = A("berserkerrage", "cooldown"),
+    [23989] = A("readiness", "cooldown"),
+    [34692] = A("beastwithin", "cooldown"),
+    [19577] = A("petintimidation", "cooldown"), -- Hunter Intimidation
+    [18708] = A("feldomination", "cooldown"),
+    [20707] = A("soulstone", "cooldown"), -- Soulstone Resurrection
+    -- Racials
+    [7744] = A("wotf", "cooldown"), -- Will of the Forsaken
+    [20594] = A("stoneform", "cooldown"),
+    [20589] = A("escapeartist", "cooldown"),
+}
+
+-- Legacy alias used by older debug/docs; maps to sound keys' display text.
+AA.ANNOUNCE_CASTS = setmetatable({}, {
+    __index = function(_, spellId)
+        local e = AA.ANNOUNCE_SPELLS[spellId]
+        return e and AA.VOICE_TEXT[e.sound] or nil
+    end,
+})
 
 -- Resurrection casts (announce loudly).
 AA.ANNOUNCE_RES = {
-    [20770] = "Resurrection",   -- Priest
-    [20773] = "Redemption",     -- Paladin
-    [20777] = "Ancestral Spirit", -- Shaman
-    [26994] = "Rebirth",        -- Druid
+    [2006] = "resurrect", [2010] = "resurrect", [10880] = "resurrect",
+    [10881] = "resurrect", [20770] = "resurrect", -- Priest
+    [7328] = "resurrect", [10322] = "resurrect", [10324] = "resurrect",
+    [20772] = "resurrect", [20773] = "resurrect", -- Paladin Redemption
+    [2008] = "resurrect", [20609] = "resurrect", [20610] = "resurrect",
+    [20776] = "resurrect", [20777] = "resurrect", -- Shaman Ancestral Spirit
+    [20484] = "resurrect", [20739] = "resurrect", [20742] = "resurrect",
+    [20747] = "resurrect", [20748] = "resurrect", [26994] = "resurrect", -- Rebirth
 }
 
 -- Drink aura spell IDs (any rank) plus name fallback.

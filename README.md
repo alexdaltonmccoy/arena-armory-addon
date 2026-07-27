@@ -25,7 +25,7 @@ Arena Armory is a complete arena toolkit in the spirit of Gladdy and GladiusEx, 
 
 ## Announcer (GladiatorlosSA-style)
 
-Audio alerts via text-to-speech for enemy trinkets, drinking, resurrects, big CC casts, and low health — no sound pack downloads needed. Pick a voice or let it choose automatically.
+Shipped voice clips (`Media/Voice/*.ogg`) call out enemy trinkets, CC, major cooldowns (Bubble, Cloak, Ice Block, …), drinking, resurrects, and low health. Optional text-to-speech is available but off by default.
 
 ## Match Recorder
 

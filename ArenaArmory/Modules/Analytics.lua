@@ -149,6 +149,8 @@ local function OurSide(m)
 end
 
 local function RatingDelta(m)
+    -- Skirmishes have no CR; older builds wrongly stamped GetPersonalRatedInfo.
+    if m.rated == false then return nil, nil end
     local side = OurSide(m)
     if side == nil or type(m.ratings) ~= "table" then return nil, nil end
     local r = m.ratings[side]
@@ -156,7 +158,10 @@ local function RatingDelta(m)
     local newR = tonumber(r.newRating)
     local oldR = tonumber(r.oldRating)
     if not newR or newR <= 0 then return nil, nil end
-    return newR, oldR and (newR - oldR) or nil
+    local delta = oldR and (newR - oldR) or nil
+    -- Pre-rated-flag skirmish false positive: standing CR with +0 change.
+    if m.rated == nil and oldR and delta == 0 then return nil, nil end
+    return newR, delta
 end
 
 -- Rating after the match, its change, and both teams' matchmaking values

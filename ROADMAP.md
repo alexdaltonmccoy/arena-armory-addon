@@ -51,12 +51,16 @@ companion (`C:\dev\arena-armory-desktop`), and the web app / API
   [Blizzard](https://news.blizzard.com/en-us/article/24291476/bcc-anniversary-edition-black-temple-arrives-august-27)):
   - **Aug 18** — Arena Season 2 ends (weekly restarts); leftover AP → honor (1:10).
   - **Aug 27, 3:00 pm PDT** — Phase 3 raids/hubs/Epic Gems (BT, Hyjal, Netherwing).
+    (Not the same as Arena Season 3 — Google/AI blurbs often conflate these.)
   - **Sep 1** — Arena Season 3 starts (weekly restarts); Vengeful gear vendors.
   - **Priority 1 (before Sep 1):** `tbc-p3` **PvP** BiS + guide-content (Vengeful),
     extend `data/pvpCosts.ts` with S3 arena-point / honor vendor costs, update
-    Upgrades + class guides, flip PvP lists to Season 3 when ready.
-  - **Priority 2 (after PvP):** `tbc-p3` **PvE** BiS/guides (BT / Hyjal), epic
-    gem recommendations on gearing tabs.
+    Upgrades + class guides. Default phase auto-flips to `tbc-p3` on **Sep 1**
+    (Arena S3), not Aug 27 — via `SEASON_3_START_MS` / `getCurrentPhase()`
+    (`EXPO_PUBLIC_FORCE_PHASE` override).
+  - **Priority 2:** `tbc-p3` **PvE** lists scaffolded from P2 + epic gem catalog
+    upgrades; gear still needs piece-by-piece BT/Hyjal BiS passes. Per-piece
+    gem suggestions + shopping totals live on guides + Upgrades (PvP and PvE).
   Honor/marks costs for Veteran’s / medallions already show on **Upgrades** +
   class-guide Gearing.
 - **Match result scoreboards (high-level)** - on each match detail page,
