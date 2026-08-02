@@ -236,7 +236,9 @@ local options = {
                 },
                 hint = {
                     type = "description", order = 3,
-                    name = "\nRogue★  Warrior●  Mage◆  Hunter/Druid▲  Priest☾  Paladin■  Shaman✕  Warlock☠",
+                    name = "\nFixed mapping (not configurable yet):\n"
+                        .. "Rogue = Star · Warrior = Circle · Mage = Diamond · Hunter/Druid = Triangle\n"
+                        .. "Priest = Moon · Paladin = Square · Shaman = Cross · Warlock = Skull",
                 },
             },
         },
