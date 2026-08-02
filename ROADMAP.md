@@ -67,20 +67,14 @@ companion (`C:\dev\arena-armory-desktop`), and the web app / API
     (Not the same as Arena Season 3 — Google/AI blurbs often conflate these.)
   - **Sep 1** — Arena Season 3 starts (weekly restarts); Vengeful gear vendors.
   - **Done for PvP Priority 1:** BiS + costs + guide overlays (see Shipped).
-  - **Next Priority:** ship currency desktop release + addon Curse tag, then
-    `tbc-p3` **PvE** piece-by-piece BT/Hyjal BiS passes (lists already
-    scaffolded). Per-piece gem suggestions + shopping totals live on guides
-    + Upgrades.
-- **S3 currency tracking (honor / marks / arena points → gear progress)** -
-  Full 3-repo spec: `SEASON3_CURRENCY_TRACKING.md`. **Verified locally**
-  (addon `C_CurrencyInfo` 1901/1900 + marks → desktop import → site).
-  Stretch (not Sep 1): enchanting-mats/gems inventory (§4). Still need:
-  desktop install release + addon packager tag so non-dev installs get it.
-- **Party chat callouts (trinket / big CDs)** - Off / Self / Party;
-  `[Arena Armory]` prefix; PARTY channel only in arena (never RAID).
-  Drink/low-HP self-only. *(ready to ship)*
-- **Arena party automark** - class→raid icon; party announce
-  `[Arena Armory] Marked party: {rt} Name, …`; clear on leave. *(ready to ship)*
+  - **Done:** S3 currency path (site + addon v1.6.0 + desktop v1.3.0).
+  - **Next Priority:** tag addon release for party callouts + automark
+    (on `master`, not Curse-tagged yet), then `tbc-p3` **PvE** BT/Hyjal
+    BiS polish (lists scaffolded; gem suggestions already on guides/Upgrades).
+- **S3 currency tracking** - **Shipped** (see SEASON3_CURRENCY_TRACKING.md).
+  Stretch later: mats inventory (§4).
+- **Party chat callouts + arena automark** - on `master` (majors-only party
+  chat; class marks + one-shot announce). **Tag Curse/Wago next** (v1.7.0).
 - **Match result scoreboards (high-level)** - on each match detail page,
   alongside (or above) coaching narrative ("what went right / wrong / next"),
   show winner-vs-loser tables for high-level metrics: damage done, CC done,
@@ -100,6 +94,11 @@ companion (`C:\dev\arena-armory-desktop`), and the web app / API
 
 ## Shipped recently
 
+- **S3 currency tracking** - addon `ArenaArmoryCurrency` (honor/AP via
+  `C_CurrencyInfo` 1901/1900 + BG marks), desktop v1.3.0 upload, site
+  `/account` manual balances + Upgrades affordability bars.
+- **Party chat callouts + automark** (addon `master`, pending Curse tag) -
+  `[Arena Armory]` majors to PARTY; class raid icons in arena.
 - **Profiles lite** - opt-in public `/profile/{battletag-slug}` with claimed
   characters and Twitch/YouTube links (edited on /account; Hidden by default;
   per-character Public/Private also gates profile listing).
