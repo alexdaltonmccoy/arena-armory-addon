@@ -78,6 +78,9 @@ companion (`C:\dev\arena-armory-desktop`), and the web app / API
   voice + raid-warning. Automark unchanged.
 - **S3 currency tracking** - **Shipped** (see SEASON3_CURRENCY_TRACKING.md).
   Stretch later: mats inventory (§4).
+- **Site UI consistency pass** - fonts, color/opacity, spacing, and text
+  density across character/guides/matches (not just Upgrades). Upgrades
+  wallet have/need strip shipped separately; this is the broader cleanup.
 - **Match result scoreboards (high-level)** - on each match detail page,
   alongside (or above) coaching narrative ("what went right / wrong / next"),
   show winner-vs-loser tables for high-level metrics: damage done, CC done,
