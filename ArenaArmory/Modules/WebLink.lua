@@ -20,6 +20,18 @@ function AA.Slugify(s)
     return s
 end
 
+-- Same convention as arenaarmory.com `charKey(realm, name)`:
+-- `<realm-slug>_<lowercase name>` (name is lowercased, not slugified).
+function AA.CharKey(name, realm)
+    if not name or not realm then return nil end
+    local n = AA.StripRealm(name)
+    if not n then return nil end
+    n = n:lower():gsub("^%s+", ""):gsub("%s+$", "")
+    local r = AA.Slugify(realm)
+    if n == "" or r == "" then return nil end
+    return r .. "_" .. n
+end
+
 function AA.CharacterURL(name, realm)
     return ("%s/character/%s/%s"):format(AA.SITE_URL, AA.Slugify(realm), AA.Slugify(name))
 end

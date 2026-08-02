@@ -67,17 +67,23 @@ companion (`C:\dev\arena-armory-desktop`), and the web app / API
     (Not the same as Arena Season 3 — Google/AI blurbs often conflate these.)
   - **Sep 1** — Arena Season 3 starts (weekly restarts); Vengeful gear vendors.
   - **Done for PvP Priority 1:** BiS + costs + guide overlays (see Shipped).
-  - **Next Priority:** S3 currency tracking (below), then `tbc-p3` **PvE**
-    piece-by-piece BT/Hyjal BiS passes (lists already scaffolded). Per-piece
-    gem suggestions + shopping totals live on guides + Upgrades.
+  - **Next Priority:** ship currency desktop release + addon Curse tag, then
+    `tbc-p3` **PvE** piece-by-piece BT/Hyjal BiS passes (lists already
+    scaffolded). Per-piece gem suggestions + shopping totals live on guides
+    + Upgrades.
 - **S3 currency tracking (honor / marks / arena points → gear progress)** -
-  Full 3-repo spec: `SEASON3_CURRENCY_TRACKING.md`. Target v1 by Sep 1 or
-  first S3 week. Stretch (not Sep 1): enchanting-mats/gems inventory (§4).
-  - **Site (in progress / local):** Firestore `currencySnapshots`,
-    `POST /api/currency/import`, `POST /api/account/currency`, public GET,
-    /account manual balances, Upgrades have/need bars + Affordable badges +
-    cheapest-first purchase order. Deploy when ready.
-  - **Still todo:** addon SavedVariables snapshot → desktop parse/upload.
+  Full 3-repo spec: `SEASON3_CURRENCY_TRACKING.md`. **Verified locally**
+  (addon `C_CurrencyInfo` 1901/1900 + marks → desktop import → site).
+  Stretch (not Sep 1): enchanting-mats/gems inventory (§4). Still need:
+  desktop install release + addon packager tag so non-dev installs get it.
+- **Party chat callouts (trinket / big CDs)** - optional text announce in
+  addition to the voice pack: e.g. enemy trinket used. Prefer **PARTY**
+  (or INSTANCE_CHAT) so the teammate hears it without needing the addon;
+  prefix `[Arena Armory]` so it reads like other callout addons. Options
+  for Off / Self-only / Party. Keep spam-gated like the announcer.
+- **Arena party automark** - in arena, auto-assign raid target icons to
+  party members by class (stable mapping, clear on leave). Helps focus
+  calls without manually marking each game; toggle in options.
 - **Match result scoreboards (high-level)** - on each match detail page,
   alongside (or above) coaching narrative ("what went right / wrong / next"),
   show winner-vs-loser tables for high-level metrics: damage done, CC done,

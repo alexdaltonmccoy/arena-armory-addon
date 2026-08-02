@@ -289,6 +289,8 @@ addon:RegisterChatCommand("aa", function(input)
         addon:Print(AA.db.profile.locked and "Frames locked." or "Frames unlocked - drag the green anchor.")
     elseif command == "matches" then
         addon:Print(("Matches stored: %d"):format(AA.Recorder:GetMatchCount()))
+    elseif command == "currency" then
+        AA.Currency:DebugPrint()
     elseif command == "ratings" then
         AA.Recorder:DebugRatings()
     elseif command == "announcer" or command == "aaudio" then

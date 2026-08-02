@@ -3,7 +3,7 @@
 ## Notes: Arena enemy frames, trinket/DR/cooldown trackers, audio announcer, and match recording for TBC Classic. Companion addon for arenaarmory.com
 ## Author: ArenaArmory
 ## Version: @project-version@
-## SavedVariables: ArenaArmoryDB, ArenaArmoryMatches
+## SavedVariables: ArenaArmoryDB, ArenaArmoryMatches, ArenaArmoryCurrency
 ## IconTexture: Interface\AddOns\ArenaArmory\Media\Logo.png
 ## X-Website: https://arenaarmory.com
 ## X-Category: PvP
@@ -25,6 +25,7 @@ Modules\SpecDetection.lua
 Modules\Announcer.lua
 Modules\WebLink.lua
 Modules\Recorder.lua
+Modules\Currency.lua
 Modules\Analytics.lua
 Modules\TestMode.lua
 Core\Options.lua

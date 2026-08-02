@@ -9,7 +9,7 @@ S3 (Vengeful) gear costs arena points; Veteran's offset/medallions cost honor + 
 ## 1. Addon (wow-gladius) — currency snapshot
 
 - New SavedVariables table (schema-versioned alongside the match recorder's): `ArenaArmoryCurrency = { [charKey] = { honor, arenaPoints, marks = { av, wsg, ab, eots }, updatedAt } }`. charKey = same `<realm-slug>_<name>` convention as matches.
-- Capture on PLAYER_LOGOUT and after each arena match (both already-hooked moments): honor via `GetHonorCurrency()`, arena points via `GetArenaCurrency()`, marks via `GetItemCount(itemId, true)` (include bank) for WSG 20558 / AB 20559 / AV 20560 / EotS 29024 — **verify these item IDs against the 2.5.x Anniversary client before shipping.**
+- Capture on PLAYER_LOGOUT and after each arena match (both already-hooked moments): honor / arena points via `C_CurrencyInfo.GetCurrencyInfo` on Classic IDs **1901** / **1900** (`Constants.CurrencyConsts.CLASSIC_HONOR_CURRENCY_ID` / `CLASSIC_ARENA_POINTS_CURRENCY_ID`; Anniversary removed `GetHonorCurrency` / `GetArenaCurrency`), marks via `GetItemCount(itemId, true)` (include bank) for WSG 20558 / AB 20559 / AV 20560 / EotS 29024.
 - The SavedVariables file is account-wide, so every character the account logs plays in — alts accumulate for free.
 - Bump the recorder schema version; mirror the type in the desktop app's shared types.
 
@@ -33,4 +33,4 @@ Concept: snapshot counts of a whitelist of S3-relevant gem/enchant mats (item ID
 
 Priority 1 stays the tbc-p3 PvP BiS/vendor-cost content (ROADMAP.md). This feature is Priority 2 and intentionally sliced so each repo's change is small: addon table (~half day), desktop parse+upload (~half day), site import+display (~1–2 days), manual input (~half day), affordability bars (~1 day against existing cost data). The stretch (mats) has no deadline.
 
-**Status 2026-08-02:** Site slice implemented in `wow-classic-armory` (API + /account manual + Upgrades affordability). Next: addon snapshot + desktop upload.
+**Status 2026-08-02:** End-to-end verified locally (addon → SV → desktop → site affordability). Honor/AP via `C_CurrencyInfo` Classic IDs 1901/1900. Remaining: ship desktop release + addon Curse/Wago tag.
