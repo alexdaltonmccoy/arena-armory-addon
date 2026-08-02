@@ -4,12 +4,12 @@
 local _, AA = ...
 local addon = AA.addon
 
-local Currency = addon:NewModule("Currency", "AceEvent-3.0")
+local Currency = addon:NewModule("Currency", "AceEvent-3.0", "AceTimer-3.0")
 AA.Currency = Currency
 
 local SCHEMA_VERSION = 1
 
--- TBC Mark of Honor item IDs (verified vs wowhead.com/tbc).
+-- TBC Mark of Honor item IDs (wowhead.com/tbc + Anniversary).
 local MARK_ITEMS = {
     wsg = 20558, -- Warsong Gulch
     ab = 20559,  -- Arathi Basin
@@ -31,7 +31,6 @@ local function QuantityFromCurrencyId(id)
             return math.floor(info.quantity)
         end
     end
-    -- Legacy GetCurrencyInfo(id) -> name, amount, ...
     if type(GetCurrencyInfo) == "function" then
         local ok, name, amount = pcall(GetCurrencyInfo, id)
         if ok and type(amount) == "number" and amount >= 0 then
@@ -68,16 +67,94 @@ local function GetArenaPoints()
     return 0
 end
 
+local function TryCount(fn, itemId, includeBank)
+    if type(fn) ~= "function" then return nil end
+    local ok, count = pcall(fn, itemId, includeBank)
+    if ok and type(count) == "number" and count >= 0 then
+        return math.floor(count)
+    end
+    return nil
+end
+
+local function BagNumSlots(bag)
+    if C_Container and C_Container.GetContainerNumSlots then
+        local ok, n = pcall(C_Container.GetContainerNumSlots, bag)
+        if ok and type(n) == "number" then return n end
+    end
+    if type(GetContainerNumSlots) == "function" then
+        local ok, n = pcall(GetContainerNumSlots, bag)
+        if ok and type(n) == "number" then return n end
+    end
+    return 0
+end
+
+local function BagItemId(bag, slot)
+    if C_Container and C_Container.GetContainerItemID then
+        local ok, id = pcall(C_Container.GetContainerItemID, bag, slot)
+        if ok and type(id) == "number" then return id end
+    end
+    if type(GetContainerItemID) == "function" then
+        local ok, id = pcall(GetContainerItemID, bag, slot)
+        if ok and type(id) == "number" then return id end
+    end
+    if type(GetContainerItemLink) == "function" then
+        local ok, link = pcall(GetContainerItemLink, bag, slot)
+        if ok and type(link) == "string" then
+            local id = tonumber(link:match("item:(%d+)"))
+            if id then return id end
+        end
+    end
+    return nil
+end
+
+local function BagStackCount(bag, slot)
+    if C_Container and C_Container.GetContainerItemInfo then
+        local ok, info = pcall(C_Container.GetContainerItemInfo, bag, slot)
+        if ok and type(info) == "table" then
+            local n = info.stackCount or info.quantity
+            if type(n) == "number" then return n end
+        end
+    end
+    if type(GetContainerItemInfo) == "function" then
+        -- Classic: texture, count, locked, quality, readable, lootable, link, ...
+        local ok, _, count = pcall(GetContainerItemInfo, bag, slot)
+        if ok and type(count) == "number" then return count end
+    end
+    return 1
+end
+
+-- Bags 0–4 (backpack + four bag slots). Bank omitted unless bank UI is open.
+local function CountMarkInBags(itemId)
+    local total = 0
+    for bag = 0, 4 do
+        local slots = BagNumSlots(bag)
+        for slot = 1, slots do
+            if BagItemId(bag, slot) == itemId then
+                total = total + BagStackCount(bag, slot)
+            end
+        end
+    end
+    return total
+end
+
 local function CountMark(itemId)
-    if type(GetItemCount) ~= "function" or type(itemId) ~= "number" then return 0 end
-    -- includeBank=true when the bank has been opened this session; otherwise bags only.
-    local ok, count = pcall(GetItemCount, itemId, true)
-    if not ok or type(count) ~= "number" or count < 0 then return 0 end
-    return math.floor(count)
+    if type(itemId) ~= "number" then return 0 end
+
+    -- Anniversary / modern clients prefer C_Item; legacy GetItemCount may error
+    -- or return 0 before bags are ready.
+    local n = TryCount(C_Item and C_Item.GetItemCount, itemId, true)
+        or TryCount(C_Item and C_Item.GetItemCount, itemId, false)
+        or TryCount(GetItemCount, itemId, true)
+        or TryCount(GetItemCount, itemId, false)
+        or 0
+
+    if n <= 0 then
+        n = CountMarkInBags(itemId)
+    end
+    return n
 end
 
 local function NowMs()
-    -- Match site Date.now() milliseconds so newest-wins works across sources.
     local t = time()
     if type(t) ~= "number" then return 0 end
     return t * 1000
@@ -113,7 +190,6 @@ function Currency:Snapshot(reason)
 
     local prior = ArenaArmoryCurrency.characters[key]
     if prior and type(prior.updatedAt) == "number" and prior.updatedAt > snapshot.updatedAt then
-        -- Clock skew / double fire: never write an older stamp.
         return prior
     end
 
@@ -152,8 +228,30 @@ function Currency:OnLogout()
 end
 
 function Currency:OnBankOpened()
-    -- Refresh mark counts once the bank cache is available.
     self:Snapshot("bank")
+end
+
+function Currency:ScheduleBagRefresh()
+    if self.bagTimer then
+        self:CancelTimer(self.bagTimer, true)
+        self.bagTimer = nil
+    end
+    -- Bags often empty for a beat after login /reload; debounce BAG_UPDATE.
+    self.bagTimer = self:ScheduleTimer(function()
+        self.bagTimer = nil
+        if self:IsEnabled() then
+            self:Snapshot("bags")
+        end
+    end, 0.75)
+end
+
+function Currency:OnBagUpdate()
+    self:ScheduleBagRefresh()
+end
+
+function Currency:OnEnteringWorld()
+    self:Snapshot("enter")
+    self:ScheduleBagRefresh()
 end
 
 function Currency:OnInitialize()
@@ -165,6 +263,16 @@ function Currency:OnEnable()
     self:RegisterMessage("AA_MATCH_RECORDED", "OnMatchRecorded")
     self:RegisterEvent("PLAYER_LOGOUT", "OnLogout")
     self:RegisterEvent("BANKFRAME_OPENED", "OnBankOpened")
-    -- Capture on load so /reload alone is enough for local desktop testing.
+    self:RegisterEvent("BAG_UPDATE", "OnBagUpdate")
+    self:RegisterEvent("PLAYER_ENTERING_WORLD", "OnEnteringWorld")
+    -- Immediate capture for honor/AP; marks usually fill on the bag refresh.
     self:Snapshot("enable")
+    self:ScheduleBagRefresh()
+end
+
+function Currency:OnDisable()
+    if self.bagTimer then
+        self:CancelTimer(self.bagTimer, true)
+        self.bagTimer = nil
+    end
 end
