@@ -147,17 +147,17 @@ function Announcer:Announce(soundKey, text, force)
     self:ChatCallout(text, soundKey)
 end
 
--- Drink / low-health stay self-only (too noisy for party).
-local CHAT_SELF_ONLY = {
-    drinking = true,
-    lowhealth = true,
-}
-
 function Announcer:ChatCallout(text, soundKey)
     local mode = AA.db.profile.announcer.chatCallout or "off"
     if mode == "off" or not text or text == "" then return end
-    if mode == "party" and soundKey and CHAT_SELF_ONLY[soundKey] then
-        mode = "self"
+
+    -- Party mode only relays the major whitelist (trinket, drinking, walls, etc.).
+    -- Everything else (incl. low health) stays self-only.
+    if mode == "party" then
+        local allowed = soundKey and AA.PARTY_CHAT_SOUNDS and AA.PARTY_CHAT_SOUNDS[soundKey]
+        if not allowed then
+            mode = "self"
+        end
     end
 
     local msg = "[Arena Armory] " .. text

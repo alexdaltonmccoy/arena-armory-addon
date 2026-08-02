@@ -419,42 +419,75 @@ AA.ANNOUNCE_SPELLS = {
     [16190] = A("manatide", "cooldown"), -- Mana Tide Totem
     [16166] = A("elementalmastery", "cooldown"),
     [30823] = A("shamanisticrage", "cooldown"),
-    [23920] = A("spellreflection", "cooldown"),
+    -- Spell Reflection / Berserker Rage intentionally omitted (too noisy for callouts).
     [14177] = A("coldblood", "cooldown"),
     [13750] = A("adrenalinerush", "cooldown"),
-    [2983] = A("sprint", "cooldown"), [8696] = A("sprint", "cooldown"), [11305] = A("sprint", "cooldown"),
     [14185] = A("preparation", "cooldown"),
     [36554] = A("shadowstep", "cooldown"),
-    [14183] = A("premeditation", "cooldown"),
-    [1784] = A("stealth", "cooldown"), [1785] = A("stealth", "cooldown"),
-    [1786] = A("stealth", "cooldown"), [1787] = A("stealth", "cooldown"),
     [2825] = A("bloodlust", "cooldown"),
     [32182] = A("heroism", "cooldown"),
     [29166] = A("innervate", "cooldown"),
     [22812] = A("barkskin", "cooldown"),
-    [16979] = A("feralcharge", "cooldown"),
     [12043] = A("presenceofmind", "cooldown"),
     [12472] = A("icyveins", "cooldown"),
     [12042] = A("arcanepower", "cooldown"),
     [11129] = A("combustion", "cooldown"),
     [11958] = A("coldsnap", "cooldown"),
-    [1953] = A("blink", "cooldown"),
-    [30449] = A("spellsteal", "cooldown"),
     [31884] = A("avengingwrath", "cooldown"),
-    [20252] = A("intercept", "cooldown"), -- Intercept
-    [100] = A("charge", "cooldown"), [6178] = A("charge", "cooldown"), [11578] = A("charge", "cooldown"),
     [12292] = A("deathwish", "cooldown"),
     [1719] = A("recklessness", "cooldown"),
-    [18499] = A("berserkerrage", "cooldown"),
     [23989] = A("readiness", "cooldown"),
     [34692] = A("beastwithin", "cooldown"),
     [19577] = A("petintimidation", "cooldown"), -- Hunter Intimidation
     [18708] = A("feldomination", "cooldown"),
     [20707] = A("soulstone", "cooldown"), -- Soulstone Resurrection
-    -- Racials
+    -- Racials (CC break)
     [7744] = A("wotf", "cooldown"), -- Will of the Forsaken
-    [20594] = A("stoneform", "cooldown"),
-    [20589] = A("escapeartist", "cooldown"),
+}
+
+-- Party-chat whitelist: only these sound keys go to PARTY when chatCallout=party.
+-- Voice/raid-warning still follow the normal announcer toggles for other spells.
+AA.PARTY_CHAT_SOUNDS = {
+    trinket = true,
+    drinking = true,
+    bubble = true,
+    iceblock = true,
+    cloak = true,
+    evasion = true,
+    divineprotection = true,
+    deterrence = true,
+    barkskin = true,
+    painsuppression = true,
+    vanish = true,
+    bop = true,
+    freedom = true,
+    layonhands = true,
+    recklessness = true,
+    deathwish = true,
+    avengingwrath = true,
+    arcanepower = true,
+    icyveins = true,
+    combustion = true,
+    bloodlust = true,
+    heroism = true,
+    innervate = true,
+    grounding = true,
+    natureswiftness = true,
+    manatide = true,
+    adrenalinerush = true,
+    coldblood = true,
+    beastwithin = true,
+    -- Game-deciding CC
+    polymorph = true,
+    fear = true,
+    cyclone = true,
+    blind = true,
+    repentance = true,
+    wyvern = true,
+    scatter = true,
+    -- Res
+    resurrect = true,
+    soulstone = true,
 }
 
 -- Legacy alias used by older debug/docs; maps to sound keys' display text.

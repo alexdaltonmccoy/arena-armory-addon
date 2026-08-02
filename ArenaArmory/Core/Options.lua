@@ -181,11 +181,11 @@ local options = {
                 },
                 chatCallout = {
                     type = "select", order = 2.6, name = "Chat callouts",
-                    desc = "Send \"[Arena Armory] …\" to party for trinket/CC/CDs. Drink and low-health stay self-only.",
+                    desc = "Party chat only for major calls (trinket, drinking, walls, big CDs/CC). Noisy spells stay voice/self-only.",
                     values = {
                         off = "Off",
                         self = "Self only",
-                        party = "Party chat",
+                        party = "Party chat (majors)",
                     },
                 },
                 trinket = { type = "toggle", order = 3, name = "Announce trinket" },
