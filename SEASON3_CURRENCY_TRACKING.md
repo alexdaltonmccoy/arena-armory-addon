@@ -32,3 +32,5 @@ Concept: snapshot counts of a whitelist of S3-relevant gem/enchant mats (item ID
 ## Sequencing vs the S3 clock
 
 Priority 1 stays the tbc-p3 PvP BiS/vendor-cost content (ROADMAP.md). This feature is Priority 2 and intentionally sliced so each repo's change is small: addon table (~half day), desktop parse+upload (~half day), site import+display (~1–2 days), manual input (~half day), affordability bars (~1 day against existing cost data). The stretch (mats) has no deadline.
+
+**Status 2026-08-02:** Site slice implemented in `wow-classic-armory` (API + /account manual + Upgrades affordability). Next: addon snapshot + desktop upload.

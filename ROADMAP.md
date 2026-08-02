@@ -71,14 +71,13 @@ companion (`C:\dev\arena-armory-desktop`), and the web app / API
     piece-by-piece BT/Hyjal BiS passes (lists already scaffolded). Per-piece
     gem suggestions + shopping totals live on guides + Upgrades.
 - **S3 currency tracking (honor / marks / arena points → gear progress)** -
-  addon snapshots per-character balances into SavedVariables, desktop app
-  uploads them, site shows have/need affordability bars against the S3 cost
-  data on Upgrades + character PvP tab, with a manual-input fallback on
-  /account for claimed characters. Full 3-repo spec:
-  `SEASON3_CURRENCY_TRACKING.md` (this repo). Priority 2 behind the tbc-p3
-  content; target v1 by Sep 1 or first S3 week. Stretch (not Sep 1):
-  enchanting-mats/gems inventory comparison — account-wide via SavedVariables
-  but non-soulbound caveats apply (guild bank/mail invisible), see spec §4.
+  Full 3-repo spec: `SEASON3_CURRENCY_TRACKING.md`. Target v1 by Sep 1 or
+  first S3 week. Stretch (not Sep 1): enchanting-mats/gems inventory (§4).
+  - **Site (in progress / local):** Firestore `currencySnapshots`,
+    `POST /api/currency/import`, `POST /api/account/currency`, public GET,
+    /account manual balances, Upgrades have/need bars + Affordable badges +
+    cheapest-first purchase order. Deploy when ready.
+  - **Still todo:** addon SavedVariables snapshot → desktop parse/upload.
 - **Match result scoreboards (high-level)** - on each match detail page,
   alongside (or above) coaching narrative ("what went right / wrong / next"),
   show winner-vs-loser tables for high-level metrics: damage done, CC done,
