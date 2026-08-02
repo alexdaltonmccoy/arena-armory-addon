@@ -13,7 +13,7 @@ local lowHpAnnounced = {}  -- arena index -> last announce time
 local SPAM_WINDOW = 2.5
 local VOICE_PATH = "Interface\\AddOns\\ArenaArmory\\Media\\Voice\\"
 
--- Session-only; toggled with /aa announcer debug (or auto-on for unpackaged "dev").
+-- Session-only; toggled with /aa announcer debug (off by default).
 Announcer.debug = false
 Announcer.build = "voice1"
 
@@ -374,10 +374,6 @@ function Announcer:OnEnable()
         cfg.useTTS = false
         if cfg.cooldowns == nil then cfg.cooldowns = true end
         cfg.voicePackV1 = true
-    end
-    if AA.version == "dev" then
-        self.debug = true
-        addon:Print(("Announcer debug ON (build=%s). /aa announcer off to silence."):format(self.build))
     end
     self:RegisterMessage("AA_TRINKET_USED", "OnTrinketUsed")
     self:RegisterMessage("AA_CLEU", "OnCLEU")
