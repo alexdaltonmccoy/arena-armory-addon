@@ -66,7 +66,7 @@ AA.defaults = {
             useTTS = false,    -- optional; Anniversary TTS is flaky
             alertSound = true, -- beep only if voice clip fails and TTS is off
             raidWarning = true,
-            -- "off" | "self" | "party"
+            -- "off" | "self" | "party" — party = majors only (trinket/drink/walls/lust/res)
             chatCallout = "party",
             channel = "Master",
             voice = "auto",

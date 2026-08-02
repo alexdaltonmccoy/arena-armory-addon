@@ -151,26 +151,19 @@ function Announcer:ChatCallout(text, soundKey)
     local mode = AA.db.profile.announcer.chatCallout or "off"
     if mode == "off" or not text or text == "" then return end
 
-    -- Party mode only relays the major whitelist (trinket, drinking, walls, etc.).
-    -- Everything else (incl. low health) stays self-only.
+    -- Party: only the major whitelist (trinket, drinking, walls, lust, res).
+    -- No self-chat fallback — non-majors stay voice / raid-warning only.
     if mode == "party" then
         local allowed = soundKey and AA.PARTY_CHAT_SOUNDS and AA.PARTY_CHAT_SOUNDS[soundKey]
-        if not allowed then
-            mode = "self"
-        end
-    end
-
-    local msg = "[Arena Armory] " .. text
-    if mode == "self" then
-        if DEFAULT_CHAT_FRAME then
-            DEFAULT_CHAT_FRAME:AddMessage("|cff66ccff" .. msg .. "|r")
-        end
+        if not allowed then return end
+        local msg = "[Arena Armory] " .. text
+        AA.SendGroupMessage(msg)
         return
     end
-    if mode == "party" then
-        if not AA.SendGroupMessage(msg) and DEFAULT_CHAT_FRAME then
-            DEFAULT_CHAT_FRAME:AddMessage("|cff66ccff" .. msg .. "|r")
-        end
+
+    -- Opt-in self-only chat (not used as a fallback from party mode).
+    if mode == "self" and DEFAULT_CHAT_FRAME then
+        DEFAULT_CHAT_FRAME:AddMessage("|cff66ccff[Arena Armory] " .. text .. "|r")
     end
 end
 

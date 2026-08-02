@@ -46,8 +46,10 @@ node .tools/check-lua.js
 ## Diagnosing announcer (voice clips)
 
 Callouts play shipped `ArenaArmory/Media/Voice/*.ogg` via `PlaySoundFile`
-(GladiatorlosSA-style). TTS is optional and off by default. Unpackaged
-checkouts (version `dev`) turn chat tracing on automatically.
+(GladiatorlosSA-style). TTS is optional and off by default. Announcer
+debug chat tracing is **off by default** (`/aa announcer debug` to opt in).
+Party chat callouts (when enabled) are **majors only** — trinket, drinking,
+walls, lust, innervate/grounding/NS/mana tide, res — not every CC/CD.
 
 Regenerate clips (Google Chirp3-HD female, arena pace):
 

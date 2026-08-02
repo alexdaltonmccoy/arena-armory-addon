@@ -68,13 +68,16 @@ companion (`C:\dev\arena-armory-desktop`), and the web app / API
   - **Sep 1** — Arena Season 3 starts (weekly restarts); Vengeful gear vendors.
   - **Done for PvP Priority 1:** BiS + costs + guide overlays (see Shipped).
   - **Done:** S3 currency path (site + addon v1.6.0 + desktop v1.3.0).
-  - **Next Priority:** tag addon release for party callouts + automark
-    (on `master`, not Curse-tagged yet), then `tbc-p3` **PvE** BT/Hyjal
-    BiS polish (lists scaffolded; gem suggestions already on guides/Upgrades).
+  - **Done:** addon **v1.7.0** (party callouts + automark).
+  - **Done:** `tbc-p3` **PvE** BT/Hyjal polish — boss-specific BiS sources
+    + deeper PvE guides (races/professions). Site default still flips to
+    `tbc-p3` on Sep 1 (not Aug 27).
+- **Party chat callouts — majors only** - **Shipped** addon v1.7.1: no
+  self-chat spam; party only for trinket / drinking / walls / lust /
+  innervate / grounding / NS / mana tide / res. CC and noisy CDs stay
+  voice + raid-warning. Automark unchanged.
 - **S3 currency tracking** - **Shipped** (see SEASON3_CURRENCY_TRACKING.md).
   Stretch later: mats inventory (§4).
-- **Party chat callouts + arena automark** - on `master` (majors-only party
-  chat; class marks + one-shot announce). **Tag Curse/Wago next** (v1.7.0).
 - **Match result scoreboards (high-level)** - on each match detail page,
   alongside (or above) coaching narrative ("what went right / wrong / next"),
   show winner-vs-loser tables for high-level metrics: damage done, CC done,

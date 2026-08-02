@@ -181,11 +181,11 @@ local options = {
                 },
                 chatCallout = {
                     type = "select", order = 2.6, name = "Chat callouts",
-                    desc = "Party chat only for major calls (trinket, drinking, walls, big CDs/CC). Noisy spells stay voice/self-only.",
+                    desc = "Party chat for majors only (trinket, drinking, walls, lust, innervate, res). Other announces stay voice/raid-warning — no chat spam.",
                     values = {
                         off = "Off",
-                        self = "Self only",
-                        party = "Party chat (majors)",
+                        self = "Self chat (all announces)",
+                        party = "Party chat (majors only)",
                     },
                 },
                 trinket = { type = "toggle", order = 3, name = "Announce trinket" },

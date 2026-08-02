@@ -445,11 +445,12 @@ AA.ANNOUNCE_SPELLS = {
     [7744] = A("wotf", "cooldown"), -- Will of the Forsaken
 }
 
--- Party-chat whitelist: only these sound keys go to PARTY when chatCallout=party.
--- Voice/raid-warning still follow the normal announcer toggles for other spells.
+-- Party-chat whitelist when chatCallout=party. Keep this tiny — voice/raid
+-- warning still cover the rest. No CC, no Shadowstep/Kidney/PI spam.
 AA.PARTY_CHAT_SOUNDS = {
     trinket = true,
     drinking = true,
+    -- Immunities / walls
     bubble = true,
     iceblock = true,
     cloak = true,
@@ -460,31 +461,14 @@ AA.PARTY_CHAT_SOUNDS = {
     painsuppression = true,
     vanish = true,
     bop = true,
-    freedom = true,
     layonhands = true,
-    recklessness = true,
-    deathwish = true,
-    avengingwrath = true,
-    arcanepower = true,
-    icyveins = true,
-    combustion = true,
+    -- Raid-swinging utility
     bloodlust = true,
     heroism = true,
     innervate = true,
     grounding = true,
     natureswiftness = true,
     manatide = true,
-    adrenalinerush = true,
-    coldblood = true,
-    beastwithin = true,
-    -- Game-deciding CC
-    polymorph = true,
-    fear = true,
-    cyclone = true,
-    blind = true,
-    repentance = true,
-    wyvern = true,
-    scatter = true,
     -- Res
     resurrect = true,
     soulstone = true,
