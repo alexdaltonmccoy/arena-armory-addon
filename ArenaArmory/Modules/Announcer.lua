@@ -143,6 +143,35 @@ function Announcer:Announce(soundKey, text, force)
     if cfg.raidWarning ~= false and text and RaidNotice_AddMessage and RaidWarningFrame then
         RaidNotice_AddMessage(RaidWarningFrame, text, ChatTypeInfo["RAID_WARNING"])
     end
+
+    self:ChatCallout(text, soundKey)
+end
+
+-- Drink / low-health stay self-only (too noisy for party).
+local CHAT_SELF_ONLY = {
+    drinking = true,
+    lowhealth = true,
+}
+
+function Announcer:ChatCallout(text, soundKey)
+    local mode = AA.db.profile.announcer.chatCallout or "off"
+    if mode == "off" or not text or text == "" then return end
+    if mode == "party" and soundKey and CHAT_SELF_ONLY[soundKey] then
+        mode = "self"
+    end
+
+    local msg = "[Arena Armory] " .. text
+    if mode == "self" then
+        if DEFAULT_CHAT_FRAME then
+            DEFAULT_CHAT_FRAME:AddMessage("|cff66ccff" .. msg .. "|r")
+        end
+        return
+    end
+    if mode == "party" then
+        if not AA.SendGroupMessage(msg) and DEFAULT_CHAT_FRAME then
+            DEFAULT_CHAT_FRAME:AddMessage("|cff66ccff" .. msg .. "|r")
+        end
+    end
 end
 
 -- Back-compat for /aa announcer test and older call sites.
@@ -195,7 +224,8 @@ function Announcer:OnTrinketUsed(_, i)
         return
     end
     if AA.db.profile.announcer.trinket then
-        self:Announce("trinket", "Trinket", true)
+        local who = (i and OpponentLabel(i)) or "Enemy"
+        self:Announce("trinket", who .. " trinket", true)
     else
         self:DebugPrint(("trinket used arena%d but trinket announce off"):format(i or -1))
     end
@@ -275,7 +305,7 @@ function Announcer:OnUnitAura(_, unit)
 
     if drinking and not drinkAnnounced[i] then
         drinkAnnounced[i] = true
-        self:Announce("drinking", "Drinking")
+        self:Announce("drinking", OpponentLabel(i) .. " drinking")
     elseif not drinking then
         drinkAnnounced[i] = nil
     end
@@ -294,7 +324,7 @@ function Announcer:OnUnitHealth(_, unit)
     if hp / hpMax <= cfg.lowHealthThreshold then
         if not lowHpAnnounced[i] or (now - lowHpAnnounced[i]) > 10 then
             lowHpAnnounced[i] = now
-            self:Announce("lowhealth", "Low health")
+            self:Announce("lowhealth", OpponentLabel(i) .. " low health")
         end
     end
 end
@@ -320,6 +350,7 @@ function Announcer:DumpStatus()
         tostring(cfg.casts), tostring(cfg.cooldowns), tostring(cfg.interrupts),
         tostring(cfg.trinket), tostring(cfg.drink), tostring(cfg.resurrect),
         tostring(cfg.lowHealth)))
+    addon:Print(("  chatCallout=%s"):format(tostring(cfg.chatCallout or "off")))
     addon:Print(("  voicePath=%s"):format(VOICE_PATH))
     addon:Print("Test: /aa announcer test   (plays trinket.ogg)")
 end

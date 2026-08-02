@@ -23,6 +23,7 @@ Modules\DR.lua
 Modules\Cooldowns.lua
 Modules\SpecDetection.lua
 Modules\Announcer.lua
+Modules\PartyMark.lua
 Modules\WebLink.lua
 Modules\Recorder.lua
 Modules\Currency.lua

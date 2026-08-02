@@ -179,6 +179,15 @@ local options = {
                     type = "toggle", order = 2.5, name = "Raid warning text",
                     desc = "Also flash the callout as a raid warning on screen.",
                 },
+                chatCallout = {
+                    type = "select", order = 2.6, name = "Chat callouts",
+                    desc = "Send \"[Arena Armory] …\" to party for trinket/CC/CDs. Drink and low-health stay self-only.",
+                    values = {
+                        off = "Off",
+                        self = "Self only",
+                        party = "Party chat",
+                    },
+                },
                 trinket = { type = "toggle", order = 3, name = "Announce trinket" },
                 drink = { type = "toggle", order = 4, name = "Announce drinking" },
                 casts = { type = "toggle", order = 5, name = "Announce CC",
@@ -209,6 +218,25 @@ local options = {
                     type = "execute", order = 11, name = "Toggle announcer debug",
                     desc = "Chat-traces every announce attempt / miss. Also: /aa announcer debug",
                     func = function() AA.Announcer:SetDebug(not AA.Announcer.debug) end,
+                },
+            },
+        },
+        partyMark = {
+            type = "group", order = 16.5, name = "Party Marks",
+            args = {
+                enabled = {
+                    type = "toggle", order = 1, name = "Auto-mark party by class in arena",
+                    desc = "Assigns raid target icons by class. Cleared when you leave the arena.",
+                    width = "full",
+                },
+                announce = {
+                    type = "toggle", order = 2, name = "Announce marks in party chat",
+                    desc = "Sends \"[Arena Armory] Marked party: {rt} Name, …\" when marks are applied.",
+                    width = "full",
+                },
+                hint = {
+                    type = "description", order = 3,
+                    name = "\nRogue★  Warrior●  Mage◆  Hunter/Druid▲  Priest☾  Paladin■  Shaman✕  Warlock☠",
                 },
             },
         },

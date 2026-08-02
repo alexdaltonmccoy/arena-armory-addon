@@ -76,14 +76,11 @@ companion (`C:\dev\arena-armory-desktop`), and the web app / API
   (addon `C_CurrencyInfo` 1901/1900 + marks → desktop import → site).
   Stretch (not Sep 1): enchanting-mats/gems inventory (§4). Still need:
   desktop install release + addon packager tag so non-dev installs get it.
-- **Party chat callouts (trinket / big CDs)** - optional text announce in
-  addition to the voice pack: e.g. enemy trinket used. Prefer **PARTY**
-  (or INSTANCE_CHAT) so the teammate hears it without needing the addon;
-  prefix `[Arena Armory]` so it reads like other callout addons. Options
-  for Off / Self-only / Party. Keep spam-gated like the announcer.
-- **Arena party automark** - in arena, auto-assign raid target icons to
-  party members by class (stable mapping, clear on leave). Helps focus
-  calls without manually marking each game; toggle in options.
+- **Party chat callouts (trinket / big CDs)** - Off / Self / Party;
+  `[Arena Armory]` prefix; PARTY channel only in arena (never RAID).
+  Drink/low-HP self-only. *(ready to ship)*
+- **Arena party automark** - class→raid icon; party announce
+  `[Arena Armory] Marked party: {rt} Name, …`; clear on leave. *(ready to ship)*
 - **Match result scoreboards (high-level)** - on each match detail page,
   alongside (or above) coaching narrative ("what went right / wrong / next"),
   show winner-vs-loser tables for high-level metrics: damage done, CC done,

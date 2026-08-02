@@ -66,6 +66,8 @@ AA.defaults = {
             useTTS = false,    -- optional; Anniversary TTS is flaky
             alertSound = true, -- beep only if voice clip fails and TTS is off
             raidWarning = true,
+            -- "off" | "self" | "party"
+            chatCallout = "party",
             channel = "Master",
             voice = "auto",
             trinket = true,
@@ -76,6 +78,11 @@ AA.defaults = {
             resurrect = true,
             lowHealth = true,
             lowHealthThreshold = 0.3,
+        },
+
+        partyMark = {
+            enabled = true,
+            announce = true, -- party chat when marks are applied
         },
 
         recorder = {

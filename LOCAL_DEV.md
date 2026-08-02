@@ -21,6 +21,12 @@ cmd /c mklink /J "$wowAddOns\ArenaArmory" "$src"
 A normal copied folder will **not** pick up repo edits — confirm with
 `(Get-Item $wowAddOns\ArenaArmory).LinkType` → should be `Junction`.
 
+**Warning:** CurseForge / WowUp "Update" replaces the junction with a real
+folder and can **delete the git checkout contents** through the old link.
+After any Curse update: restore from git if needed (`git restore ArenaArmory`),
+then re-run the `mklink /J` commands above. Prefer disabling auto-update for
+Arena Armory while developing.
+
 Or copy `ArenaArmory` into `Interface\AddOns` after each change.
 
 Enable **Arena Armory** in the AddOns list (character select → AddOns).
