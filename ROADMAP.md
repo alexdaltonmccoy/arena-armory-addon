@@ -9,6 +9,13 @@ companion (`C:\dev\arena-armory-desktop`), and the web app / API
 - **WoW addon v1** - enemy frames (trinkets, DRs, cooldowns, cast bars, spec
   detection), announcer, test mode, match recorder, auto-release to
   CurseForge/Wago via GitHub Actions.
+- **Voice-pack announcer (addon v1.5.0)** - GladiatorlosSA-style callouts via
+  shipped `Media/Voice/*.ogg` (90 Chirp3-HD clips at arena pace): trinket,
+  drinking, low health, resurrects, CC, major cooldowns, optional interrupts.
+  TTS is optional/off by default. Generator: `scripts/generate-voice-pack.py`.
+  Coverage is solid for arena; optional parity polish (Blade Flurry, Intervene,
+  Bestial Wrath, Mass Dispel, Purge/Dispel, Shield Bash, major racials) is
+  Later, not a Sep 1 blocker.
 - **Desktop app** - SavedVariables auto-discovery and watching, parse +
   dedupe + upload, self-provisioned tokens, addon-disabled diagnostics,
   system tray background sync, launch at startup, per-character armory links.
@@ -45,24 +52,33 @@ companion (`C:\dev\arena-armory-desktop`), and the web app / API
   action), "what worked" wins-vs-losses observations, best partners for the
   matchup, and the comp's match list.
 
+- **tbc-p3 PvP BiS + guide narratives** - 11/11 PvP BiS lists (Vengeful +
+  Vindicator offsets), `pvpCosts.ts` S3 vendor costs, phase auto-flip to
+  `tbc-p3` on Sep 1 (`SEASON_3_START_MS`), and Season 3 PvP guide-content
+  overlays registered in `CONTENT_P3` (Season 3 / Vengeful / Vindicator’s
+  copy; no more Merciless/Veteran’s fallback on P3 PvP guides).
+
 ## Next up
 
-- **Phase 3 — PvP first, then PvE** (Anniversary dates from
+- **Phase 3 — remaining toward Sep 1** (Anniversary dates from
   [Blizzard](https://news.blizzard.com/en-us/article/24291476/bcc-anniversary-edition-black-temple-arrives-august-27)):
   - **Aug 18** — Arena Season 2 ends (weekly restarts); leftover AP → honor (1:10).
   - **Aug 27, 3:00 pm PDT** — Phase 3 raids/hubs/Epic Gems (BT, Hyjal, Netherwing).
     (Not the same as Arena Season 3 — Google/AI blurbs often conflate these.)
   - **Sep 1** — Arena Season 3 starts (weekly restarts); Vengeful gear vendors.
-  - **Priority 1 (before Sep 1):** `tbc-p3` **PvP** BiS + guide-content (Vengeful),
-    extend `data/pvpCosts.ts` with S3 arena-point / honor vendor costs, update
-    Upgrades + class guides. Default phase auto-flips to `tbc-p3` on **Sep 1**
-    (Arena S3), not Aug 27 — via `SEASON_3_START_MS` / `getCurrentPhase()`
-    (`EXPO_PUBLIC_FORCE_PHASE` override).
-  - **Priority 2:** `tbc-p3` **PvE** lists scaffolded from P2 + epic gem catalog
-    upgrades; gear still needs piece-by-piece BT/Hyjal BiS passes. Per-piece
-    gem suggestions + shopping totals live on guides + Upgrades (PvP and PvE).
-  Honor/marks costs for Veteran’s / medallions already show on **Upgrades** +
-  class-guide Gearing.
+  - **Done for PvP Priority 1:** BiS + costs + guide overlays (see Shipped).
+  - **Next Priority:** S3 currency tracking (below), then `tbc-p3` **PvE**
+    piece-by-piece BT/Hyjal BiS passes (lists already scaffolded). Per-piece
+    gem suggestions + shopping totals live on guides + Upgrades.
+- **S3 currency tracking (honor / marks / arena points → gear progress)** -
+  addon snapshots per-character balances into SavedVariables, desktop app
+  uploads them, site shows have/need affordability bars against the S3 cost
+  data on Upgrades + character PvP tab, with a manual-input fallback on
+  /account for claimed characters. Full 3-repo spec:
+  `SEASON3_CURRENCY_TRACKING.md` (this repo). Priority 2 behind the tbc-p3
+  content; target v1 by Sep 1 or first S3 week. Stretch (not Sep 1):
+  enchanting-mats/gems inventory comparison — account-wide via SavedVariables
+  but non-soulbound caveats apply (guild bank/mail invisible), see spec §4.
 - **Match result scoreboards (high-level)** - on each match detail page,
   alongside (or above) coaching narrative ("what went right / wrong / next"),
   show winner-vs-loser tables for high-level metrics: damage done, CC done,
@@ -97,6 +113,10 @@ companion (`C:\dev\arena-armory-desktop`), and the web app / API
 
 ## Later
 
+- **Announcer GSA parity polish** - extra voice clips + spell maps for Blade
+  Flurry, Intervene, Bestial Wrath, Mass Dispel, Purge / Dispel Magic, Shield
+  Bash, and high-signal racials (Arcane Torrent, Blood Fury, Berserking). Not
+  needed for Season 3 launch.
 - **Blog / news (SEO)** - lightweight `/blog` (or `/news`) for patch notes,
   Season 3 prep, gearing explainers, and internal links into guides/comps/
   character pages. Keep it simple (MD/JSON posts or CMS-lite); prioritize
