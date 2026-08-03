@@ -5,16 +5,18 @@ local addon = AA.addon
 local PartyMark = addon:NewModule("PartyMark", "AceEvent-3.0", "AceTimer-3.0")
 AA.PartyMark = PartyMark
 
+-- Raid icons by class color (rt1–rt8). Nine TBC classes / eight icons:
+-- Mage + Shaman both blue → share Square; second one gets next free icon.
 local CLASS_ICON = {
-    ROGUE   = 1, -- Star
-    WARRIOR = 2, -- Circle
-    MAGE    = 3, -- Diamond
-    HUNTER  = 4, -- Triangle
-    PRIEST  = 5, -- Moon
-    PALADIN = 6, -- Square
-    SHAMAN  = 7, -- Cross
-    WARLOCK = 8, -- Skull
-    DRUID   = 4, -- Triangle (collision resolved below)
+    ROGUE   = 1, -- Star (yellow)
+    DRUID   = 2, -- Circle (orange)
+    WARLOCK = 3, -- Diamond (purple)
+    HUNTER  = 4, -- Triangle (green)
+    PRIEST  = 5, -- Moon (white)
+    MAGE    = 6, -- Square (blue)
+    SHAMAN  = 6, -- Square (blue) — collision resolved in Apply
+    PALADIN = 7, -- Cross (red / pink)
+    WARRIOR = 8, -- Skull
 }
 
 local ICON_RT = {
