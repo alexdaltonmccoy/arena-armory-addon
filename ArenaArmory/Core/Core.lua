@@ -62,25 +62,14 @@ function AA.StripRealm(name)
     return name:match("^([^%-]+)") or name
 end
 
---- Send a message to the current group. In arena, use PARTY (never RAID —
---- Anniversary prints "You are not in a raid group" for RAID there).
+--- Send a message to the current group.
+--- Always PARTY — never RAID. Anniversary arenas error with
+--- "You are not in a raid group" for RAID chat even when grouped.
 function AA.SendGroupMessage(msg)
     if not msg or msg == "" then return false end
     if not IsInGroup or not IsInGroup() then return false end
     if type(SendChatMessage) ~= "function" then return false end
-
-    local inArena = AA.inArena
-        or (IsInInstance and select(2, IsInInstance()) == "arena")
-
-    local chatType = "PARTY"
-    if inArena then
-        -- Party chat is what players already use in arena ([Party] lines).
-        chatType = "PARTY"
-    elseif IsInRaid and IsInRaid() then
-        chatType = "RAID"
-    end
-
-    pcall(SendChatMessage, msg, chatType)
+    pcall(SendChatMessage, msg, "PARTY")
     return true
 end
 
