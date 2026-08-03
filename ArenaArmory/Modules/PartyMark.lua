@@ -90,8 +90,8 @@ function PartyMark:ResetClassIcons()
     cfg.classIcons = owned
 end
 
---- SetRaidTarget toggles if called with the icon the unit already has.
---- Only call when the current index differs; never clear+reapply blindly.
+--- Set once. Never double-call: SetRaidTarget toggles, so a second call undoes
+--- the first when GetRaidTargetIndex lags (caused Skull↔Star thrashing).
 local function SetMark(unit, icon)
     if not UnitExists(unit) or not icon then return "missing" end
     local current = GetRaidTargetIndex and GetRaidTargetIndex(unit) or nil
@@ -99,15 +99,7 @@ local function SetMark(unit, icon)
         return "unchanged"
     end
     pcall(SetRaidTarget, unit, icon)
-    local final = GetRaidTargetIndex and GetRaidTargetIndex(unit) or nil
-    if final ~= icon then
-        pcall(SetRaidTarget, unit, icon)
-        final = GetRaidTargetIndex and GetRaidTargetIndex(unit) or nil
-    end
-    if final == icon then
-        return "changed"
-    end
-    return "failed"
+    return "changed"
 end
 
 local function ClearUnit(unit)
@@ -115,9 +107,6 @@ local function ClearUnit(unit)
     local current = GetRaidTargetIndex and GetRaidTargetIndex(unit)
     if current and current ~= 0 then
         pcall(SetRaidTarget, unit, 0)
-        if GetRaidTargetIndex(unit) then
-            pcall(SetRaidTarget, unit, 0)
-        end
     end
 end
 
@@ -127,6 +116,7 @@ function PartyMark:ClearAll()
         ClearUnit("party" .. i)
     end
     self.announcedThisArena = false
+    self.appliedThisArena = false
 end
 
 local function CollectParty()
@@ -135,6 +125,15 @@ local function CollectParty()
     for i = 1, 4 do
         local u = "party" .. i
         if UnitExists(u) then table.insert(list, u) end
+    end
+    -- Anniversary arenas sometimes expose the group as raid units only.
+    if #list <= 1 and IsInRaid and IsInRaid() then
+        for i = 1, 5 do
+            local u = "raid" .. i
+            if UnitExists(u) and not UnitIsUnit(u, "player") then
+                table.insert(list, u)
+            end
+        end
     end
     return list
 end
@@ -158,6 +157,44 @@ local function ReadAssignments()
     return assignments
 end
 
+--- True when every party member already has their preferred (or a unique) mark
+--- and no SetRaidTarget call is needed.
+function PartyMark:NeedsApply()
+    local party = CollectParty()
+    if #party == 0 then return false end
+
+    local used = {}
+    for _, unit in ipairs(party) do
+        local _, classToken = UnitClass(unit)
+        local preferred = self:PreferredIcon(classToken)
+        local current = GetRaidTargetIndex and GetRaidTargetIndex(unit) or nil
+        if not current or current == 0 then
+            return true
+        end
+        if preferred and current == preferred then
+            if used[current] then return true end
+            used[current] = true
+        else
+            -- Wrong mark for class (and preferred is free or unused): re-apply.
+            if preferred and not used[preferred] then
+                local preferredTaken = false
+                for _, u2 in ipairs(party) do
+                    if u2 ~= unit and (GetRaidTargetIndex(u2) or 0) == preferred then
+                        preferredTaken = true
+                        break
+                    end
+                end
+                if not preferredTaken then
+                    return true
+                end
+            end
+            if used[current] then return true end
+            used[current] = true
+        end
+    end
+    return false
+end
+
 function PartyMark:AnnounceMarks(assignments)
     local cfg = AA.db.profile.partyMark
     if not cfg.announce then return end
@@ -177,27 +214,23 @@ function PartyMark:AnnounceMarks(assignments)
 end
 
 function PartyMark:CancelApplyTimers()
-    if self.applyTimers then
-        for _, t in ipairs(self.applyTimers) do
-            self:CancelTimer(t, true)
-        end
-    end
-    self.applyTimers = {}
     if self.applyTimer then
         self:CancelTimer(self.applyTimer, true)
         self.applyTimer = nil
     end
-end
-
-function PartyMark:ScheduleApplyPasses()
-    self:CancelApplyTimers()
-    -- Several passes: roster/class can lag on zone-in; combat may block the first try.
-    for _, delay in ipairs({ 0.5, 1.5, 3.0, 5.0, 8.0 }) do
-        table.insert(self.applyTimers, self:ScheduleTimer("Apply", delay))
+    if self.rosterTimer then
+        self:CancelTimer(self.rosterTimer, true)
+        self.rosterTimer = nil
     end
 end
 
+function PartyMark:ScheduleApply(delay)
+    self:CancelApplyTimers()
+    self.applyTimer = self:ScheduleTimer("Apply", delay or 2.0)
+end
+
 function PartyMark:Apply()
+    self.applyTimer = nil
     if not AA.db.profile.partyMark.enabled then return end
     if not AA.inArena or AA.testMode then return end
     if not IsInGroup or not IsInGroup() then return end
@@ -210,21 +243,28 @@ function PartyMark:Apply()
         return
     end
 
+    -- Idempotent: do not touch marks that are already correct.
+    if self.appliedThisArena and not self:NeedsApply() then
+        return
+    end
+
     local party = CollectParty()
     if #party == 0 then return end
 
     local used = {}
     local changed = 0
-    local failed = 0
 
-    -- Pass 1: claim each unit's preferred class icon when free.
     local plan = {}
     for _, unit in ipairs(party) do
         local _, classToken = UnitClass(unit)
-        local preferred = self:PreferredIcon(classToken)
-        plan[#plan + 1] = { unit = unit, class = classToken, preferred = preferred }
+        plan[#plan + 1] = {
+            unit = unit,
+            class = classToken,
+            preferred = self:PreferredIcon(classToken),
+        }
     end
 
+    -- Pass 1: preferred class icons.
     for _, entry in ipairs(plan) do
         local icon = entry.preferred
         if icon and not used[icon] then
@@ -233,52 +273,56 @@ function PartyMark:Apply()
                 used[icon] = true
                 entry.done = true
                 if result == "changed" then changed = changed + 1 end
-            elseif result == "failed" then
-                failed = failed + 1
             end
         end
     end
 
-    -- Pass 2: anyone still unmarked gets the next free icon.
+    -- Pass 2: leftovers get next free icon (only if still unmarked / wrong).
     for _, entry in ipairs(plan) do
         if not entry.done then
-            local icon = nil
-            for i = 1, 8 do
-                if not used[i] then
-                    icon = i
-                    break
+            local current = GetRaidTargetIndex and GetRaidTargetIndex(entry.unit) or nil
+            if current and current > 0 and not used[current] then
+                -- Keep an existing unique mark rather than thrashing.
+                used[current] = true
+                entry.done = true
+            else
+                local icon = nil
+                for i = 1, 8 do
+                    if not used[i] then
+                        icon = i
+                        break
+                    end
                 end
-            end
-            if icon then
-                local result = SetMark(entry.unit, icon)
-                if result == "changed" or result == "unchanged" then
-                    used[icon] = true
-                    entry.done = true
-                    if result == "changed" then changed = changed + 1 end
-                elseif result == "failed" then
-                    failed = failed + 1
+                if icon then
+                    local result = SetMark(entry.unit, icon)
+                    if result == "changed" or result == "unchanged" then
+                        used[icon] = true
+                        entry.done = true
+                        if result == "changed" then changed = changed + 1 end
+                    end
                 end
             end
         end
     end
+
+    self.appliedThisArena = true
 
     if changed > 0 then
         self:AnnounceMarks(ReadAssignments())
     end
 
-    return changed, failed
+    return changed
 end
 
 function PartyMark:DumpStatus()
-    local inArena = AA.inArena and true or false
     local party = CollectParty()
-    addon:Print(("Party marks: enabled=%s inArena=%s party=%d combat=%s leader=%s")
+    addon:Print(("Party marks: enabled=%s inArena=%s party=%d combat=%s needsApply=%s")
         :format(
             tostring(AA.db.profile.partyMark.enabled),
-            tostring(inArena),
+            tostring(AA.inArena and true or false),
             #party,
             tostring(InCombatLockdown and InCombatLockdown() or false),
-            tostring(UnitIsGroupLeader and UnitIsGroupLeader("player") or false)
+            tostring(self:NeedsApply())
         ))
     for _, unit in ipairs(party) do
         local name = AA.StripRealm(UnitName(unit)) or unit
@@ -299,14 +343,14 @@ end
 
 function PartyMark:ForceApply()
     self.announcedThisArena = false
+    self.appliedThisArena = false
     if not AA.inArena then
         addon:Print("Party marks: not in arena — nothing to mark.")
         self:DumpStatus()
         return
     end
-    local changed, failed = self:Apply()
-    addon:Print(("Party marks: apply done (changed=%s failed=%s).")
-        :format(tostring(changed or 0), tostring(failed or 0)))
+    local changed = self:Apply()
+    addon:Print(("Party marks: apply done (changed=%s)."):format(tostring(changed or 0)))
     self:DumpStatus()
 end
 
@@ -318,18 +362,21 @@ function PartyMark:OnRegen()
     end
     self.pending = nil
     self:UnregisterEvent("PLAYER_REGEN_ENABLED")
-    self:Apply()
+    self:ScheduleApply(0.5)
 end
 
 function PartyMark:OnArenaJoined()
     self.announcedThisArena = false
+    self.appliedThisArena = false
     self.pending = nil
-    self:ScheduleApplyPasses()
+    -- One calm pass after roster/class settle — not a burst of re-applies.
+    self:ScheduleApply(2.0)
 end
 
 function PartyMark:OnArenaLeft()
     self.pending = nil
     self.announcedThisArena = false
+    self.appliedThisArena = false
     self:CancelApplyTimers()
     self:UnregisterEvent("PLAYER_REGEN_ENABLED")
     if CanMark() then
@@ -347,14 +394,23 @@ function PartyMark:ClearWhenSafe()
 end
 
 function PartyMark:OnRoster()
-    if AA.inArena then
-        self:Apply()
+    if not AA.inArena then return end
+    -- Debounce spammy GROUP_ROSTER_UPDATE during queue/zone-in.
+    if self.rosterTimer then
+        self:CancelTimer(self.rosterTimer, true)
     end
+    self.rosterTimer = self:ScheduleTimer(function()
+        self.rosterTimer = nil
+        if AA.inArena and self:NeedsApply() then
+            self.appliedThisArena = false
+            self:Apply()
+        end
+    end, 1.5)
 end
 
 function PartyMark:OnEnable()
     self.announcedThisArena = false
-    self.applyTimers = {}
+    self.appliedThisArena = false
     self:EnsureOwnedClassIcons()
     self:RegisterMessage("AA_ARENA_JOINED", "OnArenaJoined")
     self:RegisterMessage("AA_ARENA_LEFT", "OnArenaLeft")
@@ -365,5 +421,4 @@ function PartyMark:OnDisable()
     self:CancelApplyTimers()
 end
 
--- Exported for Options.lua dropdown order.
 AA.PARTY_MARK_CLASS_ORDER = CLASS_ORDER
