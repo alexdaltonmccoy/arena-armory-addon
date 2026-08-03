@@ -10,10 +10,18 @@ AA.SpecDetection = SpecDetection
 AA.detectedSpecs = {}  -- arena index -> spec name
 AA.friendlySpecs = {}  -- teammate name (realm stripped) -> spec name
 
-local FRIENDLY_UNITS = { "player", "party1", "party2", "party3", "party4" }
+local FRIENDLY_UNITS = {
+    "player", "party1", "party2", "party3", "party4",
+    "raid1", "raid2", "raid3", "raid4", "raid5",
+}
 
 local function IsFriendlyArenaUnit(unit)
-    return unit == "player" or (unit and unit:match("^party[1-4]$")) ~= nil
+    if not unit then return false end
+    if unit == "player" then return true end
+    if unit:match("^party[1-4]$") then return true end
+    -- Anniversary arenas convert the party to a raid.
+    if unit:match("^raid[1-5]$") then return true end
+    return false
 end
 
 function SpecDetection:OnEnable()

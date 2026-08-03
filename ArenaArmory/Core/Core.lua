@@ -24,12 +24,16 @@ AA.unitClass = {}    -- "arenaN" -> classToken (cached, survives unit blips)
 
 -- Returns: name, icon, count, dispelType, duration, expirationTime, source, spellId
 function AA.GetAuraByIndex(unit, index, filter)
+    -- pcall: form/stealth aura churn on Anniversary can throw from C_UnitAuras.
     if C_UnitAuras and C_UnitAuras.GetAuraDataByIndex then
-        local a = C_UnitAuras.GetAuraDataByIndex(unit, index, filter)
-        if not a then return nil end
+        local ok, a = pcall(C_UnitAuras.GetAuraDataByIndex, unit, index, filter)
+        if not ok or not a then return nil end
         return a.name, a.icon, a.applications, a.dispelName, a.duration, a.expirationTime, a.sourceUnit, a.spellId
     end
-    local name, icon, count, dispelType, duration, expirationTime, source, _, _, spellId = UnitAura(unit, index, filter)
+    if type(UnitAura) ~= "function" then return nil end
+    local ok, name, icon, count, dispelType, duration, expirationTime, source, _, _, spellId =
+        pcall(UnitAura, unit, index, filter)
+    if not ok then return nil end
     return name, icon, count, dispelType, duration, expirationTime, source, spellId
 end
 
@@ -63,13 +67,24 @@ function AA.StripRealm(name)
 end
 
 --- Send a message to the current group.
---- Always PARTY — never RAID. Anniversary arenas error with
---- "You are not in a raid group" for RAID chat even when grouped.
+--- Never RAID (Anniversary: "You are not in a raid group"). Arenas convert
+--- the party to a raid / instance group — prefer INSTANCE_CHAT (/bg), else PARTY.
 function AA.SendGroupMessage(msg)
     if not msg or msg == "" then return false end
     if not IsInGroup or not IsInGroup() then return false end
     if type(SendChatMessage) ~= "function" then return false end
-    pcall(SendChatMessage, msg, "PARTY")
+
+    local inArena = AA.inArena
+        or (IsInInstance and select(2, IsInInstance()) == "arena")
+    local chatType = "PARTY"
+    if inArena or (LE_PARTY_CATEGORY_INSTANCE and IsInGroup(LE_PARTY_CATEGORY_INSTANCE)) then
+        chatType = "INSTANCE_CHAT"
+    end
+
+    local ok = pcall(SendChatMessage, msg, chatType)
+    if not ok and chatType ~= "PARTY" then
+        pcall(SendChatMessage, msg, "PARTY")
+    end
     return true
 end
 

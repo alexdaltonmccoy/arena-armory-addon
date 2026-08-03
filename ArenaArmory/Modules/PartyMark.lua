@@ -115,27 +115,44 @@ function PartyMark:ClearAll()
     for i = 1, 4 do
         ClearUnit("party" .. i)
     end
+    for i = 1, 5 do
+        ClearUnit("raid" .. i)
+    end
     self.announcedThisArena = false
     self.appliedThisArena = false
 end
 
+--- Anniversary prints "Party converted to Raid" in arena — use raidN when
+--- IsInRaid(), otherwise partyN. Dedupe by GUID so player isn't listed twice.
 local function CollectParty()
-    local list = {}
-    if UnitExists("player") then table.insert(list, "player") end
-    for i = 1, 4 do
-        local u = "party" .. i
-        if UnitExists(u) then table.insert(list, u) end
+    local list, seen = {}, {}
+    local function add(unit)
+        if not unit or not UnitExists(unit) then return end
+        local guid = UnitGUID and UnitGUID(unit)
+        if guid then
+            if seen[guid] then return end
+            seen[guid] = true
+        end
+        table.insert(list, unit)
     end
-    -- Anniversary arenas sometimes expose the group as raid units only.
-    if #list <= 1 and IsInRaid and IsInRaid() then
+
+    add("player")
+    if IsInRaid and IsInRaid() then
         for i = 1, 5 do
-            local u = "raid" .. i
-            if UnitExists(u) and not UnitIsUnit(u, "player") then
-                table.insert(list, u)
-            end
+            add("raid" .. i)
+        end
+    else
+        for i = 1, 4 do
+            add("party" .. i)
         end
     end
     return list
+end
+
+local function ExpectedGroupSize()
+    local n = GetNumGroupMembers and GetNumGroupMembers() or 0
+    if n > 0 then return n end
+    return 1
 end
 
 local function ReadAssignments()
@@ -213,6 +230,35 @@ function PartyMark:AnnounceMarks(assignments)
     end
 end
 
+--- Delay announce so raid conversion / partner zone-in can finish — otherwise
+--- we print "Marked party: You" and skull the warrior a moment later.
+function PartyMark:QueueAnnounce()
+    if not AA.db.profile.partyMark.announce then return end
+    if self.announcedThisArena then return end
+    if self.announceTimer then
+        self:CancelTimer(self.announceTimer, true)
+    end
+    self.announceWait = 0
+    self.announceTimer = self:ScheduleTimer("FlushAnnounce", 1.25)
+end
+
+function PartyMark:FlushAnnounce()
+    self.announceTimer = nil
+    if self.announcedThisArena or not AA.inArena then return end
+
+    local assignments = ReadAssignments()
+    if #assignments == 0 then return end
+
+    local expected = ExpectedGroupSize()
+    self.announceWait = (self.announceWait or 0) + 1
+    if expected > 1 and #assignments < expected and self.announceWait < 5 then
+        self.announceTimer = self:ScheduleTimer("FlushAnnounce", 1.0)
+        return
+    end
+
+    self:AnnounceMarks(assignments)
+end
+
 function PartyMark:CancelApplyTimers()
     if self.applyTimer then
         self:CancelTimer(self.applyTimer, true)
@@ -222,10 +268,17 @@ function PartyMark:CancelApplyTimers()
         self:CancelTimer(self.rosterTimer, true)
         self.rosterTimer = nil
     end
+    if self.announceTimer then
+        self:CancelTimer(self.announceTimer, true)
+        self.announceTimer = nil
+    end
 end
 
 function PartyMark:ScheduleApply(delay)
-    self:CancelApplyTimers()
+    if self.applyTimer then
+        self:CancelTimer(self.applyTimer, true)
+        self.applyTimer = nil
+    end
     self.applyTimer = self:ScheduleTimer("Apply", delay or 2.0)
 end
 
@@ -307,8 +360,8 @@ function PartyMark:Apply()
 
     self.appliedThisArena = true
 
-    if changed > 0 then
-        self:AnnounceMarks(ReadAssignments())
+    if changed > 0 or (#ReadAssignments() > 0 and not self.announcedThisArena) then
+        self:QueueAnnounce()
     end
 
     return changed
