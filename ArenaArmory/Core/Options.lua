@@ -236,9 +236,10 @@ local options = {
                 },
                 hint = {
                     type = "description", order = 3,
-                    name = "\nFixed mapping (not configurable yet):\n"
-                        .. "Rogue = Star · Warrior = Circle · Mage = Diamond · Hunter/Druid = Triangle\n"
-                        .. "Priest = Moon · Paladin = Square · Shaman = Cross · Warlock = Skull",
+                    name = "\nFixed mapping by class color (not configurable yet):\n"
+                        .. "Rogue = Star (yellow) · Druid = Circle (orange) · Warlock = Diamond (purple)\n"
+                        .. "Hunter = Triangle (green) · Priest = Moon · Mage/Shaman = Square (blue)\n"
+                        .. "Paladin = Cross · Warrior = Skull",
                 },
             },
         },
