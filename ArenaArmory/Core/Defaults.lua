@@ -83,6 +83,18 @@ AA.defaults = {
         partyMark = {
             enabled = true,
             announce = true, -- party chat when marks are applied
+            -- Raid target index 1–8 by class (class-color defaults).
+            classIcons = {
+                ROGUE = 1,   -- Star (yellow)
+                DRUID = 2,   -- Circle (orange)
+                WARLOCK = 3, -- Diamond (purple)
+                HUNTER = 4,  -- Triangle (green)
+                PRIEST = 5,  -- Moon (white)
+                MAGE = 6,    -- Square (blue)
+                SHAMAN = 6,  -- Square (blue)
+                PALADIN = 7, -- Cross
+                WARRIOR = 8, -- Skull
+            },
         },
 
         recorder = {

@@ -236,10 +236,84 @@ local options = {
                 },
                 hint = {
                     type = "description", order = 3,
-                    name = "\nFixed mapping by class color (not configurable yet):\n"
-                        .. "Rogue = Star (yellow) · Druid = Circle (orange) · Warlock = Diamond (purple)\n"
-                        .. "Hunter = Triangle (green) · Priest = Moon · Mage/Shaman = Square (blue)\n"
-                        .. "Paladin = Cross · Warrior = Skull",
+                    name = "\nPick a raid icon per class. Defaults follow class colors "
+                        .. "(orange Circle = Druid, Skull = Warrior, etc.). "
+                        .. "If two classes share an icon, the second party member gets the next free mark. "
+                        .. "Also: /aa marks",
+                },
+                classIcons = {
+                    type = "group", order = 4, name = "Class icons", inline = true,
+                    args = (function()
+                        local iconValues = {
+                            [1] = "1 Star (yellow)",
+                            [2] = "2 Circle (orange)",
+                            [3] = "3 Diamond (purple)",
+                            [4] = "4 Triangle (green)",
+                            [5] = "5 Moon",
+                            [6] = "6 Square (blue)",
+                            [7] = "7 Cross",
+                            [8] = "8 Skull",
+                        }
+                        local classNames = {
+                            WARRIOR = "Warrior",
+                            PALADIN = "Paladin",
+                            HUNTER = "Hunter",
+                            ROGUE = "Rogue",
+                            PRIEST = "Priest",
+                            SHAMAN = "Shaman",
+                            MAGE = "Mage",
+                            WARLOCK = "Warlock",
+                            DRUID = "Druid",
+                        }
+                        local order = {
+                            "WARRIOR", "PALADIN", "HUNTER", "ROGUE", "PRIEST",
+                            "SHAMAN", "MAGE", "WARLOCK", "DRUID",
+                        }
+                        local args = {}
+                        for i, class in ipairs(order) do
+                            args[class] = {
+                                type = "select",
+                                order = i,
+                                name = classNames[class],
+                                values = iconValues,
+                                get = function()
+                                    local map = AA.db.profile.partyMark.classIcons
+                                    if type(map) ~= "table" or type(map[class]) ~= "number" then
+                                        return AA.DEFAULT_CLASS_MARKS[class]
+                                    end
+                                    return map[class]
+                                end,
+                                set = function(_, value)
+                                    local cfg = AA.db.profile.partyMark
+                                    if type(cfg.classIcons) ~= "table" then
+                                        cfg.classIcons = {}
+                                    end
+                                    cfg.classIcons[class] = value
+                                    if AA.inArena and AA.PartyMark then
+                                        AA.PartyMark.announcedThisArena = false
+                                        AA.PartyMark:Apply()
+                                    end
+                                end,
+                            }
+                        end
+                        return args
+                    end)(),
+                },
+                reset = {
+                    type = "execute", order = 5, name = "Reset to class-color defaults",
+                    func = function()
+                        AA.PartyMark:ResetClassIcons()
+                        addon:Print("Party mark class icons reset to class-color defaults.")
+                        if AA.inArena then
+                            AA.PartyMark.announcedThisArena = false
+                            AA.PartyMark:Apply()
+                        end
+                    end,
+                },
+                force = {
+                    type = "execute", order = 6, name = "Apply marks now",
+                    desc = "Force a mark pass in the current arena (also: /aa marks).",
+                    func = function() AA.PartyMark:ForceApply() end,
                 },
             },
         },
@@ -340,6 +414,8 @@ addon:RegisterChatCommand("aa", function(input)
         end
     elseif command == "stats" then
         AA.Analytics:Toggle()
+    elseif command == "marks" or command == "mark" then
+        AA.PartyMark:ForceApply()
     elseif command == "web" then
         AA.ShowCopyDialog(AA.SITE_URL, "arenaarmory.com")
     elseif command == "lookup" then
