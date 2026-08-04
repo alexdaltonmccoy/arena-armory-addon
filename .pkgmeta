@@ -13,5 +13,14 @@ ignore:
   - dist
   - README.md
   - DEVELOPMENT.md
+  - CHANGELOG.md
 
 enable-toc-creation: no
+
+# Without this, the packager auto-generates the CurseForge/Wago changelog
+# from raw git commit messages since the last tag - which leaks internal
+# implementation detail (file names, root-cause writeups, co-author trailers)
+# to players. Point it at a curated, player-facing file instead.
+manual-changelog:
+  filename: CHANGELOG.md
+  markup-type: markdown
