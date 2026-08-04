@@ -86,9 +86,38 @@ companion (`C:\dev\arena-armory-desktop`), and the web app / API
   voice + raid-warning. Automark unchanged.
 - **S3 currency tracking** - **Shipped** (see SEASON3_CURRENCY_TRACKING.md).
   Stretch later: mats inventory (§4).
-- **Site UI consistency pass** - fonts, color/opacity, spacing, and text
-  density across character/guides/matches (not just Upgrades). Upgrades
-  wallet have/need strip shipped separately; this is the broader cleanup.
+- **Site UI overhaul (elevated priority 2026-08-04, from Alex): "genuinely
+  feels ugly/cluttered"** - this is bigger than the earlier "consistency
+  pass" framing; real design work, not just tidying. Feedback verbatim +
+  triage:
+  - **Font legibility** - the fantasy/WoW display font is the right theme
+    call but is unreadable in some places. Likely fix: keep it for
+    headings/titles only, swap body/data text (numbers, table cells, dense
+    lists) to a legible sans/serif. Audit every screen for where the display
+    font is being used for content instead of chrome.
+  - **Upgrades tab currency progress is the single worst offender** - you
+    cannot currently look at the wallet strip and tell "I have X of Y total
+    EOTS marks needed (Z more to go)" at a glance. The rest of the have/need
+    checklist below it reads fine - this is specifically the top-line
+    currency progress display. Needs a clear "have / need (X more)" per
+    currency, prominent, before anything else on the tab.
+  - **Color usage is inconsistent** - colors that are supposed to mean
+    something (quality, have-vs-need, priority) don't read as a consistent
+    system across the tab; needs an actual color legend/rules, not per-screen
+    ad hoc choices.
+  - **Gem/Enchant BiS are stranded from Gear BiS** - currently separate
+    sections; a user has to jump around to see "this item + its gem + its
+    enchant" instead of seeing them together per slot. Restructure so
+    gem/enchant recommendations live with the gear item they attach to.
+  - **Upgrade priority logic** - what counts as "next upgrade" should follow
+    real theorycrafting order: hit soft/hard caps first (e.g. hit%), then
+    optimize secondary stats (spell power, intellect, etc.) once capped. Make
+    sure the Upgrades ranking/display actually reflects this, not just raw
+    stat totals.
+  - Original scope (fonts/color/opacity/spacing/text density across
+    character/guides/matches, not just Upgrades) still applies underneath
+    this - Upgrades is the worst offender and the concrete example, but the
+    broader site needs the same pass.
 - **PvP Overview stat categories** - under coaching tips: bracket-scoped
   aggregates (e.g. DPS, trinket forced under 1 min) that change with Overall /
   2s / 3s / 5s. Later: per-match and key-matchup cards.
@@ -138,6 +167,56 @@ companion (`C:\dev\arena-armory-desktop`), and the web app / API
 - **Mobile 1.1.0** - EAS production builds submitted to App Store Connect /
   Play internal.
 
+## Competitive position & revenue plan (researched 2026-08-04 — sources in Cowork chat / STRATEGY_ASSESSMENT_2026-08.md changelog)
+
+**The moat, verified:** nobody else in Classic closes the loop addon → desktop
+uploader → web analytics on PRIVATE match data. The field splits into public-API
+ladder sites (Ironforge.pro, XUNAMATE, WarcraftGear, classic-armory.org,
+tbcpvpladder — rating/rank only, no match-level data, all donation/ad-funded)
+and in-game-only trackers (ArenaAnalytics: 154K+ CurseForge downloads, supports
+TBC Anniversary, data trapped in SavedVariables, no site). Per-match
+damage/healing/comp data of private games is structurally unavailable to
+API-scrapers — the moat is real, but it compounds with install base, so addon
+adoption IS the business metric.
+
+**The two models to steal from (Alex's hypothesis, amended):**
+- **Skill-Capped** = the monetization benchmark, and MORE of a live threat than
+  assumed: actively shipping TBC Anniversary tier lists + a premium UI package +
+  a dedicated classic pricing page (~$13/mo per user reports; exact tiers need a
+  browser check). But they have ZERO data products. Posture: don't compete on
+  video training — borrow the paid-tier playbook, differentiate on data.
+- **Murlok.io** = the traffic template, NOT a competitor: retail-only (no classic
+  at all), solo dev, fully programmatic meta pages (top-50-per-spec
+  gear/talents scraped every 8h) → ~1.4M visits/mo carried by ads. The classic
+  version of this does not exist. That's the open square.
+- Amendment: the free classic ladder-site cluster is the day-to-day attention
+  competition (they hold leaderboard SEO terms), and ArenaAnalytics is the
+  sleeping risk to the addon loop (one upload feature away from competing).
+
+**Revenue moves, ROI-ranked:**
+1. **Programmatic meta pages (Murlok model for TBC Anniversary)** — auto-generated
+   per-spec gear/talent/comp pages from the Blizzard leaderboard API + our own
+   uploaded-match aggregates (comp winrates by bracket — data nobody else has).
+   Near-zero marginal cost per page, direct AdSense multiplier on the S3 spike.
+   v0 in September; the S3/BlizzCon traffic makes every indexed page worth more.
+2. **Public leaderboard + cutoff tracker pages** — commoditized (4 free sites do
+   it) but cheap via the same API, and cutoff-checking is a daily-habit visit
+   that compounds ad impressions. Bundle with #1's crawl.
+3. **ArenaAnalytics import** — one-time importer from ArenaAnalytics
+   SavedVariables → instant match-history on our site. Turns the 154K-download
+   sleeping risk into a growth channel ("bring your history with you") and
+   seeds the aggregate dataset #1 needs. Cheap, high-leverage, defensive.
+4. **Premium tier ($3–5/mo), AFTER the S3 traffic read** — personal advanced
+   analytics: deeper coaching insights, vs-comp prep sheets, trend reports —
+   powered by the private match data competitors can't touch. Evidence base:
+   ad-free-only premium fails at niche scale (Murlok Patreon ~$174/mo), but
+   data-backed premium has precedent (PvPQ shipping AI coaching on retail;
+   Icy Veins selling log reviews). Price like Icy Veins/Wowhead (cheap,
+   annual-friendly), not like Skill-Capped — we're not selling a curriculum.
+5. **What NOT to build:** video training (Skill-Capped's game — needs a content
+   machine + YouTube funnel), coaching marketplace (no working precedent in the
+   niche), donations (consistently fails: every free ladder site is coffee-money).
+
 ## Paused
 
 - **Player discovery / LFG** - find teammates by bracket/rating/class; opt-in
@@ -172,7 +251,8 @@ companion (`C:\dev\arena-armory-desktop`), and the web app / API
   or perks. Application form lives at arenaarmory.com/contribute
   (Firestore `contributorApplications`).
 - **Monetization** - ads vs. paid tier (advanced analytics, coaching tools);
-  decide after traffic grows.
+  decide after traffic grows. **Superseded by the competitor-informed plan
+  below (2026-08-04) — see "Competitive position & revenue plan."**
 - **Video/screenshot import for coaching** - desktop app records or ingests
   clips, syncs them to the match event timeline (the original long-term
   vision).
