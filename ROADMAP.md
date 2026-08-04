@@ -86,38 +86,45 @@ companion (`C:\dev\arena-armory-desktop`), and the web app / API
   voice + raid-warning. Automark unchanged.
 - **S3 currency tracking** - **Shipped** (see SEASON3_CURRENCY_TRACKING.md).
   Stretch later: mats inventory (§4).
-- **Site UI overhaul (elevated priority 2026-08-04, from Alex): "genuinely
-  feels ugly/cluttered"** - this is bigger than the earlier "consistency
-  pass" framing; real design work, not just tidying. Feedback verbatim +
-  triage:
-  - **Font legibility** - the fantasy/WoW display font is the right theme
-    call but is unreadable in some places. Likely fix: keep it for
-    headings/titles only, swap body/data text (numbers, table cells, dense
-    lists) to a legible sans/serif. Audit every screen for where the display
-    font is being used for content instead of chrome.
-  - **Upgrades tab currency progress is the single worst offender** - you
-    cannot currently look at the wallet strip and tell "I have X of Y total
-    EOTS marks needed (Z more to go)" at a glance. The rest of the have/need
-    checklist below it reads fine - this is specifically the top-line
-    currency progress display. Needs a clear "have / need (X more)" per
-    currency, prominent, before anything else on the tab.
-  - **Color usage is inconsistent** - colors that are supposed to mean
-    something (quality, have-vs-need, priority) don't read as a consistent
-    system across the tab; needs an actual color legend/rules, not per-screen
-    ad hoc choices.
-  - **Gem/Enchant BiS are stranded from Gear BiS** - currently separate
-    sections; a user has to jump around to see "this item + its gem + its
-    enchant" instead of seeing them together per slot. Restructure so
-    gem/enchant recommendations live with the gear item they attach to.
-  - **Upgrade priority logic** - what counts as "next upgrade" should follow
-    real theorycrafting order: hit soft/hard caps first (e.g. hit%), then
-    optimize secondary stats (spell power, intellect, etc.) once capped. Make
-    sure the Upgrades ranking/display actually reflects this, not just raw
-    stat totals.
-  - Original scope (fonts/color/opacity/spacing/text density across
-    character/guides/matches, not just Upgrades) still applies underneath
-    this - Upgrades is the worst offender and the concrete example, but the
-    broader site needs the same pass.
+- **Upgrades tab UI overhaul (elevated priority 2026-08-04, from Alex: "genuinely
+  feels ugly/cluttered") - Shipped 2026-08-04** (wow-classic-armory
+  `components/UpgradesPanel.tsx`, `lib/currency.ts`, `lib/bis.ts`,
+  `lib/statPriority.ts`, `lib/theme.ts`, `components/ui/ColorLegend.tsx`):
+  - **Currency have/need, prominent** - balances and remaining need per
+    currency merged into one row each ("X of Y — Z more"), moved out of the
+    cramped score-header column into its own panel that renders first on the
+    tab, ahead of the BiS score.
+  - **Color legend** - named `stateColors` tokens (complete / in-progress /
+    attention / optional) alias the existing palette instead of raw
+    `colors.success`/`danger`/etc. scattered by context; a small legend
+    renders once near the top of the tab. Also fixed a latent inconsistency:
+    two different "Affordable" badges were using two different greens
+    (`colors.success` vs. a hardcoded `#5fbf6e`) - both now use the same
+    token.
+  - **Gem/Enchant folded into gear per slot** - the four-section layout
+    (Gear Upgrades / Enchants / Gems / Dialed In) is now one per-slot list;
+    each slot shows gear + enchant + gem status together. "Dialed In" now
+    requires all three to be clean, not just gear (previously a slot could
+    show as done while still missing an enchant). `GemIssue` gained a
+    `slot` key for reliable matching (labels weren't 1:1 between curated
+    BiS data and Blizzard's own labels).
+  - **Upgrade priority - lightweight hint, not the full engine.** Scope
+    decision made with Alex: a real hit/expertise-cap-aware ranking needs a
+    per-item stat database for BiS candidates and numeric cap tables, neither
+    of which exist (only prose in guide text) - that's a separate,
+    multi-day project. Shipped instead: the "Buy next" list now reorders by
+    the spec's already-authored stat priority (`data/guide-content`
+    `stats.items`, keyword-matched against each item's text) before falling
+    back to cost, with a caption disclosing it's approximate and a link to
+    the full guide.
+  - **Font legibility - researched, not touched.** `UpgradesPanel.tsx`
+    doesn't actually misapply the Cinzel display font to body/data text (it
+    only reaches Cinzel via `SectionHeading`, which is chrome). The "unreadable
+    in some places" complaint is a sitewide observation, not an Upgrades-tab
+    bug - the broader Cinzel-on-data audit across character/guides/matches
+    is still open, tracked below under Later.
+  - Verified against live character data (real Blizzard API character with
+    multiple gear/enchant/gem issues) in-browser; `tsc --noEmit` clean.
 - **PvP Overview stat categories** - under coaching tips: bracket-scoped
   aggregates (e.g. DPS, trinket forced under 1 min) that change with Overall /
   2s / 3s / 5s. Later: per-match and key-matchup cards.
@@ -147,6 +154,11 @@ companion (`C:\dev\arena-armory-desktop`), and the web app / API
 
 ## Shipped recently
 
+- **Upgrades tab UI overhaul** - currency have/need panel moved first and
+  merged into one row per currency, a named color-state legend, gear/enchant/
+  gem consolidated per slot instead of four separate sections, and a
+  lightweight spec-stat-priority hint on the "Buy next" list. Full detail and
+  scope notes (font audit + real stat-cap engine deferred) under Next up.
 - **Match result scoreboards (high-level)** - team totals (damage, healing,
   CC landed) as ours-vs-enemy comparison bars, above the existing per-player
   scoreboard rows on each match detail page. Same totals, averaged per game,
@@ -259,6 +271,19 @@ moments; fold into the Rebbel dogfood campaign rather than ad-hoc posting.
 
 ## Later
 
+- **Sitewide Cinzel-on-data font audit** - carved out of the 2026-08-04
+  Upgrades tab overhaul: Upgrades itself doesn't misuse the display font, so
+  the "unreadable in some places" feedback points at other screens
+  (character/guides/matches). Audit every `fonts.display*` usage (22 files as
+  of 2026-08-04) for cases applying it to dense/data text instead of
+  headings/chrome, and swap those to a legible body font.
+- **Real stat-cap-aware upgrade priority engine** - carved out of the same
+  overhaul (lightweight guide-text hint shipped instead, see Shipped). Needs
+  two things that don't exist: a per-item stat database for BiS candidates
+  (curated `BisItemRef` entries carry no structured stats today) and numeric
+  hit/expertise/etc. cap tables per class/spec/phase (only prose in guide
+  content currently). Multi-day scope - revisit if the lightweight hint
+  proves insufficient in practice.
 - **Announcer GSA parity polish** - extra voice clips + spell maps for Blade
   Flurry, Intervene, Bestial Wrath, Mass Dispel, Purge / Dispel Magic, Shield
   Bash, and high-signal racials (Arcane Torrent, Blood Fury, Berserking). Not
