@@ -160,6 +160,20 @@ local function NowMs()
     return t * 1000
 end
 
+local function MarksAllZero(marks)
+    return (marks.av or 0) == 0 and (marks.wsg or 0) == 0
+        and (marks.ab or 0) == 0 and (marks.eots or 0) == 0
+end
+
+-- Bags aren't guaranteed cached yet when these fire (login / zone-in), so a
+-- mark read here can come back all-zero even though the character actually
+-- has marks - CountMark just returns 0 for "nothing found" whether that
+-- means "really zero" or "bags not scanned yet" (see comment on OnEnable).
+local UNSAFE_MARK_REASONS = {
+    enable = true,
+    enter = true,
+}
+
 function Currency:EnsureDB()
     ArenaArmoryCurrency = ArenaArmoryCurrency or {}
     ArenaArmoryCurrency.schemaVersion = SCHEMA_VERSION
@@ -174,21 +188,31 @@ function Currency:Snapshot(reason)
     local key = AA.CharKey(name, realm)
     if not key then return nil end
 
+    local prior = ArenaArmoryCurrency.characters[key]
+
+    local marks = {
+        av = CountMark(MARK_ITEMS.av),
+        wsg = CountMark(MARK_ITEMS.wsg),
+        ab = CountMark(MARK_ITEMS.ab),
+        eots = CountMark(MARK_ITEMS.eots),
+    }
+    -- Don't let a bag-cache-not-ready read of "everything is 0" stomp a real
+    -- prior mark count - keep the last known marks and let the debounced
+    -- bag-refresh snapshot (reason "bags") correct them once bags are ready.
+    if prior and prior.marks and UNSAFE_MARK_REASONS[reason]
+        and MarksAllZero(marks) and not MarksAllZero(prior.marks) then
+        marks = prior.marks
+    end
+
     local snapshot = {
         honor = GetHonorPoints(),
         arenaPoints = GetArenaPoints(),
-        marks = {
-            av = CountMark(MARK_ITEMS.av),
-            wsg = CountMark(MARK_ITEMS.wsg),
-            ab = CountMark(MARK_ITEMS.ab),
-            eots = CountMark(MARK_ITEMS.eots),
-        },
+        marks = marks,
         updatedAt = NowMs(),
         name = name,
         realm = realm,
     }
 
-    local prior = ArenaArmoryCurrency.characters[key]
     if prior and type(prior.updatedAt) == "number" and prior.updatedAt > snapshot.updatedAt then
         return prior
     end
