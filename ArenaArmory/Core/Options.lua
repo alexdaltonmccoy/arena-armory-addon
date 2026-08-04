@@ -226,7 +226,7 @@ local options = {
             args = {
                 enabled = {
                     type = "toggle", order = 1, name = "Auto-mark party by class in arena",
-                    desc = "Assigns raid target icons by class. Cleared when you leave the arena.",
+                    desc = "Assigns raid target icons by class in arena. Marks stay on the party after the match.",
                     width = "full",
                 },
                 announce = {

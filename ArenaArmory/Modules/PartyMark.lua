@@ -427,23 +427,13 @@ function PartyMark:OnArenaJoined()
 end
 
 function PartyMark:OnArenaLeft()
+    -- Keep raid icons on the party between games / after the match.
+    -- (Previously cleared here, which felt like marks flickering off then on.)
     self.pending = nil
     self.announcedThisArena = false
     self.appliedThisArena = false
     self:CancelApplyTimers()
     self:UnregisterEvent("PLAYER_REGEN_ENABLED")
-    if CanMark() then
-        self:ClearAll()
-    else
-        self:RegisterEvent("PLAYER_REGEN_ENABLED", "ClearWhenSafe")
-    end
-end
-
-function PartyMark:ClearWhenSafe()
-    self:UnregisterEvent("PLAYER_REGEN_ENABLED")
-    if CanMark() then
-        self:ClearAll()
-    end
 end
 
 function PartyMark:OnRoster()
