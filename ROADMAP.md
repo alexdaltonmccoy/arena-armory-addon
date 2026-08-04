@@ -58,6 +58,14 @@ companion (`C:\dev\arena-armory-desktop`), and the web app / API
   overlays registered in `CONTENT_P3` (Season 3 / Vengeful / Vindicator’s
   copy; no more Merciless/Veteran’s fallback on P3 PvP guides).
 
+- **Season 2 → Season 3 transition guide** - `/guides/season-3-transition`
+  (arenaarmory.com): US/EU-paired dates, arena point conversion math, title
+  cutoffs, S3 gear preview, FAQ with JSON-LD, every fact tagged
+  Confirmed/Likely/Unknown per the verified source pack
+  (`wow-classic-armory/S3_TRANSITION_GUIDE_CONTENT.md`). Linked from home,
+  the guides index, the Upgrades wallet strip (when a character holds arena
+  points), and every arena/PvP BiS guide page. Live.
+
 ## Next up
 
 - **Phase 3 — remaining toward Sep 1** (Anniversary dates from
@@ -81,12 +89,6 @@ companion (`C:\dev\arena-armory-desktop`), and the web app / API
 - **Site UI consistency pass** - fonts, color/opacity, spacing, and text
   density across character/guides/matches (not just Upgrades). Upgrades
   wallet have/need strip shipped separately; this is the broader cleanup.
-- **Match result scoreboards (high-level)** - on each match detail page,
-  alongside (or above) coaching narrative ("what went right / wrong / next"),
-  show winner-vs-loser tables for high-level metrics: damage done, CC done,
-  healing, etc. — team totals and per-player rows. Same view when drilling
-  into a vs-comp (e.g. vs RMP): aggregate those high-level stats across games
-  vs that composition, not only W/L and tips.
 - **PvP Overview stat categories** - under coaching tips: bracket-scoped
   aggregates (e.g. DPS, trinket forced under 1 min) that change with Overall /
   2s / 3s / 5s. Later: per-match and key-matchup cards.
@@ -97,9 +99,32 @@ companion (`C:\dev\arena-armory-desktop`), and the web app / API
 - **Gamer profiles (richer)** - live-stream embeds, featured players, more
   profile depth on top of Profiles lite (pairs with profile/matchup stats
   above).
+- **BlizzCon 2026 content play (added 2026-08-04 — see C:\dev\PORTFOLIO_ROADMAP.md
+  Arena section + STRATEGY_ASSESSMENT_2026-08.md)** - Blizzard has officially
+  committed to addressing "Classic's future" at BlizzCon (Sep 12–13); Classic+
+  is rumored, not confirmed ("Project Camelot" datamine, ~29 encrypted "Classic
+  1.60" builds since Oct 2025), WotLK progression is the other candidate. Either
+  outcome answers this product's expansion-lifecycle risk. Three beats, all on
+  the existing expo-router static SEO infra (same shape as the S3 transition
+  guide — FAQ JSON-LD, Confirmed/Likely/Unknown fact tagging, internal links):
+  **(1) late Aug–early Sep, AFTER Sep 1 work:** 2–3 speculation pieces
+  ("Classic+ — everything we know", "WotLK Classic: what it means for arena
+  PvP", "BlizzCon 2026 predictions") — builds the URL equity day-of searches
+  land on. **(2) Sep 12–13:** live-updated announcement coverage + arena-player
+  reaction. **(3) post:** evergreen "everything we know" hub for whatever was
+  announced, updated as info drips — doubles as port-planning market research.
+  This unblocks the "Blog / news (SEO)" item below (its stated precondition —
+  S3 PvP lists shipped — is now met) with a concrete first content arc.
 
 ## Shipped recently
 
+- **Match result scoreboards (high-level)** - team totals (damage, healing,
+  CC landed) as ours-vs-enemy comparison bars, above the existing per-player
+  scoreboard rows on each match detail page. Same totals, averaged per game,
+  on the vs-comp matchup drilldown (e.g. vs RMP). CC is team-level only: the
+  addon's `cc` event records the victim but not the caster, so per-player CC
+  done isn't derivable from current data — revisit if a future addon schema
+  records the caster.
 - **S3 currency tracking** - addon `ArenaArmoryCurrency` (honor/AP via
   `C_CurrencyInfo` 1901/1900 + BG marks), desktop v1.3.0 upload, site
   `/account` manual balances + Upgrades affordability bars.
@@ -126,8 +151,17 @@ companion (`C:\dev\arena-armory-desktop`), and the web app / API
   needed for Season 3 launch.
 - **Blog / news (SEO)** - lightweight `/blog` (or `/news`) for patch notes,
   Season 3 prep, gearing explainers, and internal links into guides/comps/
-  character pages. Keep it simple (MD/JSON posts or CMS-lite); prioritize
-  after PvP S3 lists ship so launch content has somewhere to land.
+  character pages. Keep it simple (MD/JSON posts or CMS-lite). **Status
+  update 2026-08-04: precondition met (S3 PvP lists shipped) — first content
+  arc is the BlizzCon play in Next up; build the minimal /news route to host
+  it.** Later, this becomes the dogfood surface for Rebbel's news-reactive
+  blogPost engine (rebbel-v2/docs/ROADMAP.md) — agent-drafted, human-approved
+  post-BlizzCon coverage cadence; the first pre-BlizzCon pieces are manual,
+  not blocked on that engine. Watch Core Web Vitals as the content volume
+  grows (RN-web ships more JS than a content-first stack); if the news hub
+  becomes a real content business in 2027, the escape hatch is a dedicated
+  content subdomain (e.g. news.arenaarmory.com on Next.js) — additive, not a
+  refactor of the app.
 - **Comp standards (optional / lower priority)** - "in this matchup this class
   typically does X damage" style baselines vs the field; only after per-match
   and vs-comp scoreboards exist and prove useful. Easy to overfit or feel
