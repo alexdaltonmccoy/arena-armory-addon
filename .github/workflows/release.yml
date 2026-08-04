@@ -31,6 +31,20 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Verify CHANGELOG.md covers this version
+        run: |
+          TAG="${GITHUB_REF_NAME}"
+          FOUND=0
+          while IFS= read -r line; do
+            case "$line" in
+              "## $TAG "*|"## $TAG") FOUND=1; break ;;
+            esac
+          done < CHANGELOG.md
+          if [ "$FOUND" -eq 0 ]; then
+            echo "::error::CHANGELOG.md has no '## $TAG' entry. .pkgmeta points the release changelog at CHANGELOG.md (see manual-changelog) - if this tag has no matching entry, BigWigsMods/packager silently falls back to a raw git-log changelog, which has leaked internal commit detail to CurseForge/Wago before. Add a player-facing '## $TAG (date)' section before tagging."
+            exit 1
+          fi
+
       - name: Package and release
         uses: BigWigsMods/packager@v2
         env:
