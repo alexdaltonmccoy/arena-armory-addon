@@ -193,6 +193,41 @@ adoption IS the business metric.
   competition (they hold leaderboard SEO terms), and ArenaAnalytics is the
   sleeping risk to the addon loop (one upload feature away from competing).
 
+**Version expansion — when do we compete with Murlok? (sequenced 2026-08-04):**
+Build the programmatic meta-page engine **version-agnostic from day one** (game
+version + season as config, not hardcode) — then expansion is data work, not a
+rebuild. Sequence: **(1) Now–Sep:** TBC Anniversary only; prove revenue-per-page
+on the S3 spike before spreading. **(2) Oct, if S3 validates:** MoP Classic —
+active arena scene, Blizzard API exposes its leaderboards (classic-armory.org
+already shows MoP arena ratings), and Murlok isn't there either; config + data
+if the engine was built right. **(3) BlizzCon decides the big one:** WotLK
+Anniversary / Classic+ is where our existing users migrate — being live with
+meta pages + addon support AT that version's launch is the land-grab that locks
+the Murlok-of-Classic position; prep starts the day of the announcement.
+**(4) Retail: last or never** — Murlok's 8h-refresh crawler + PvPQ + Drustvar
+are entrenched, and our addon-loop moat matters least where Blizzard's APIs are
+richest. The Classic family is where the model is uncontested; win it fully first.
+
+**CurseForge discovery (checked 2026-08-04 — 262 downloads in 20 days, pre-season):**
+Current listing is solid (5 screenshots, active updates, Gladdy comparison,
+Classic TBC 2.5.6 flag) but thin on findability. Do NOT split the core suite —
+the addon→site loop is the moat and multi-listing maintenance is real solo cost.
+Plan: **(a) Listing optimization (cheap, before Sep 1):** add categories beyond
+Arena/PvP — Unit Frames (where Gladdy-type addons get browsed) and Audio/Video
+(announcer); work searched incumbent names into the description naturally
+("Gladius/Gladdy-style enemy frames," "GladiatorlosSA-style voice announcer,"
+"arena match history/analytics") — CurseForge search is title/summary-weighted
+and people search the names they know; keep release cadence up ("recently
+updated" surfaces addons). **(b) One satellite addon experiment (Sep):**
+"Arena Armory Announcer" standalone — the voice pack is already modular
+(Media/Voice/*.ogg + generator), GSA-style announcer searches are a proven
+demand pool, and the listing funnels to the full suite. Measure 30 days before
+any second satellite (a standalone recorder only if the ArenaAnalytics importer
+doesn't already capture that crowd). **(c) The channels that actually move
+classic addons:** Reddit (r/classicwow, r/worldofpvp) + class Discords +
+streamers using the frames on stream — the S3 window and BlizzCon week are the
+moments; fold into the Rebbel dogfood campaign rather than ad-hoc posting.
+
 **Revenue moves, ROI-ranked:**
 1. **Programmatic meta pages (Murlok model for TBC Anniversary)** — auto-generated
    per-spec gear/talent/comp pages from the Blizzard leaderboard API + our own
