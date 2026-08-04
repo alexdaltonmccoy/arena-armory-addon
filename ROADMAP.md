@@ -154,6 +154,29 @@ companion (`C:\dev\arena-armory-desktop`), and the web app / API
 
 ## Shipped recently
 
+- **Marks of Honor reading as 0 (addon v1.7.7)** - Alex hit this on his own
+  account: an immediate currency snapshot at login/zone-in (before bags are
+  cached) could read all marks as 0 and overwrite the real count, with a
+  quick `/reload` or relog inside the ~0.75s bag-refresh window persisting
+  the bad value to SavedVariables and from there straight through the
+  desktop app and site (both just trust newest-`updatedAt`, no regression
+  check). Fixed at the source: a snapshot from one of the known-unsafe
+  moments no longer overwrites real marks with an all-zero read. Self-heals
+  on next login - no manual data fix needed.
+- **CurseForge/Wago changelog was leaking internal commit detail** -
+  `BigWigsMods/packager` defaults to auto-generating the public changelog
+  from raw git commit messages since the last tag; since `ROADMAP.md` and
+  other business docs live in this same repo, that included real
+  competitive/product strategy (expansion sequencing, a CurseForge discovery
+  plan, the BlizzCon content-play plan) on the live v1.7.7 changelog page.
+  Fixed: `.pkgmeta` now points at a curated, player-facing `CHANGELOG.md`
+  (added), and a CI guard fails the release if a tag has no matching
+  changelog entry - closes the silent fallback-to-raw-git-log gap so this
+  can't quietly reopen. v1.7.7's already-published changelog was manually
+  corrected on both CurseForge and Wago; replacement text for the 7 other
+  affected historical tags (v1.3.0, v1.3.9, v1.4.1, v1.4.2, v1.6.0, v1.7.0,
+  v1.7.2 - all low-severity internal status notes, not strategic content)
+  is drafted and ready whenever Alex wants to apply it.
 - **Upgrades tab UI overhaul** - currency have/need panel moved first and
   merged into one row per currency, a named color-state legend, gear/enchant/
   gem consolidated per slot instead of four separate sections, and a
