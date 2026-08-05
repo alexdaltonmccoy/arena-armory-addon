@@ -159,6 +159,17 @@ companion (`C:\dev\arena-armory-desktop`), and the web app / API
   content" rejection** — see "Competitive position & revenue plan" below.
   Real editorial writing is exactly what a re-review needs; request review
   again once these ship.
+- **"Classic+ Waiting Room" campaign via Rebbel + MerchMaxx (P1, added
+  2026-08-05 from C:\dev\ROADMAP_ADDENDUM_2026-08-05.md)** — pre-BlizzCon
+  timing (Sep 12–13), doubles as Rebbel dogfood campaign #2 (after
+  MerchMaxx) and a MerchMaxx merch dogfood too. Ship before BlizzCon week —
+  see C:\dev\PORTFOLIO_ROADMAP.md's dogfood-sequence note
+  (MerchMaxx done → Arena pre-BlizzCon → Sobermaxx Sept → Faithmaxx Nov).
+- **CurseForge: post a comment asking for feedback (P2, added 2026-08-05)**
+  — bundle with the listing-optimization pass already queued above
+  (~30 min total for both).
+- **Build Arena MCP (P3, parking lot, added 2026-08-05)** — park until
+  after Sep 1; revisit during Season 3.
 
 ## Shipped recently
 
