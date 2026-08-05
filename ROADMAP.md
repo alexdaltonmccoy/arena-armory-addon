@@ -125,9 +125,20 @@ companion (`C:\dev\arena-armory-desktop`), and the web app / API
     is still open, tracked below under Later.
   - Verified against live character data (real Blizzard API character with
     multiple gear/enchant/gem issues) in-browser; `tsc --noEmit` clean.
-- **Gamer profiles (richer)** - live-stream embeds, featured players, more
-  profile depth on top of Profiles lite + the profile/matchup stats shipped
-  above (Shipped recently).
+- **Gamer profiles — remaining scope (2026-08-04 scope-down, see Shipped
+  recently for the Twitch embed piece already done):** "featured players"
+  needs a real admin/curation surface built from scratch (nothing exists
+  anywhere in the app - no admin route, no moderation queue, no curated-list
+  mechanism; the Contributor form is inbound-only) and is more Alex's call
+  (who gets featured, how) than an engineering one - not something to build
+  blind. "More profile depth" was never defined past that one word. Both
+  parked until Alex wants to scope them specifically.
+  - **YouTube live embed, deferred separately:** the stored value for the
+    common case is an `@handle` (`normalizeYoutube`), but YouTube's
+    live-embed URL needs the numeric channel ID, which only survives when a
+    user happens to paste a `/channel/{id}` URL. Needs a YouTube Data API
+    key + quota + somewhere to cache the resolved ID - real new
+    infrastructure, revisit if worth it.
 - **BlizzCon 2026 content play (added 2026-08-04 — see C:\dev\PORTFOLIO_ROADMAP.md
   Arena section + STRATEGY_ASSESSMENT_2026-08.md)** - Blizzard has officially
   committed to addressing "Classic's future" at BlizzCon (Sep 12–13); Classic+
@@ -147,6 +158,21 @@ companion (`C:\dev\arena-armory-desktop`), and the web app / API
 
 ## Shipped recently
 
+- **Live Twitch embed on public profiles (web)** (wow-classic-armory) -
+  scoped down from "Gamer profiles (richer)" to the one piece that was
+  actually contained; "featured players" and "more profile depth" parked
+  (see Next up - need real product scoping, not an engineering call). A
+  profile's Twitch chip now plays inline (`player.twitch.tv`) instead of
+  just linking out - the stored channel name is a clean fit for Twitch's
+  embed URL. Web-only: split via the same Metro/TS platform-suffix
+  precedent as `lib/analytics.web.ts`/`.native.ts`
+  (`components/TwitchEmbed.web.tsx`/`.native.tsx`), since embedding on
+  iOS/Android would need a new native WebView dependency + EAS rebuild for
+  one card on one screen - native keeps the existing outbound link,
+  unchanged. YouTube embedding turned out to need a YouTube Data API
+  integration (not just an embed - see Next up), so it's untouched this
+  pass. `parent` is read from `window.location.hostname` at render time, so
+  it's automatically correct for dev and prod with no new env var.
 - **Profile / matchup stats (high-level)** (wow-classic-armory) - public
   profile character cards now show CR pills per bracket
   (`bracketCrSummaries`, falling back to W-L when a bracket has games but no
