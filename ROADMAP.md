@@ -125,9 +125,6 @@ companion (`C:\dev\arena-armory-desktop`), and the web app / API
     is still open, tracked below under Later.
   - Verified against live character data (real Blizzard API character with
     multiple gear/enchant/gem issues) in-browser; `tsc --noEmit` clean.
-- **PvP Overview stat categories** - under coaching tips: bracket-scoped
-  aggregates (e.g. DPS, trinket forced under 1 min) that change with Overall /
-  2s / 3s / 5s. Later: per-match and key-matchup cards.
 - **Profile / matchup stats (high-level)** - on public/claimed profile (and
   character PvP overview): rating and high-level performance summary by
   bracket (2s / 3s / 5s) and by matchup (vs RMP, etc.), built from the same
@@ -154,6 +151,16 @@ companion (`C:\dev\arena-armory-desktop`), and the web app / API
 
 ## Shipped recently
 
+- **PvP Overview stat categories** (wow-classic-armory) - a small
+  always-visible stat row (Avg DPS, Avg HPS, Trinket forced <60s, Interrupt
+  efficiency) above the existing threshold-gated coaching tips on the PvP
+  Overview tab, bracket-scoped through the same match array the tips/charts
+  already use. No new data plumbing - derived from `computeMatchStats` and
+  `matchInsights()`'s existing per-match building blocks. Verified against
+  124+ real synced games (Overall/2v2/3v3 all update correctly, per-category
+  sample-size gating drops tiles independently in the lower-sample 3v3
+  bracket). Per-match and key-matchup cards stay Later, per the original
+  scope note.
 - **Marks of Honor reading as 0 (addon v1.7.7)** - Alex hit this on his own
   account: an immediate currency snapshot at login/zone-in (before bags are
   cached) could read all marks as 0 and overwrite the real count, with a
