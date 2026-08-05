@@ -125,13 +125,9 @@ companion (`C:\dev\arena-armory-desktop`), and the web app / API
     is still open, tracked below under Later.
   - Verified against live character data (real Blizzard API character with
     multiple gear/enchant/gem issues) in-browser; `tsc --noEmit` clean.
-- **Profile / matchup stats (high-level)** - on public/claimed profile (and
-  character PvP overview): rating and high-level performance summary by
-  bracket (2s / 3s / 5s) and by matchup (vs RMP, etc.), built from the same
-  scoreboard metrics — not per-ability deep dives.
 - **Gamer profiles (richer)** - live-stream embeds, featured players, more
-  profile depth on top of Profiles lite (pairs with profile/matchup stats
-  above).
+  profile depth on top of Profiles lite + the profile/matchup stats shipped
+  above (Shipped recently).
 - **BlizzCon 2026 content play (added 2026-08-04 — see C:\dev\PORTFOLIO_ROADMAP.md
   Arena section + STRATEGY_ASSESSMENT_2026-08.md)** - Blizzard has officially
   committed to addressing "Classic's future" at BlizzCon (Sep 12–13); Classic+
@@ -151,6 +147,19 @@ companion (`C:\dev\arena-armory-desktop`), and the web app / API
 
 ## Shipped recently
 
+- **Profile / matchup stats (high-level)** (wow-classic-armory) - public
+  profile character cards now show CR pills per bracket
+  (`bracketCrSummaries`, falling back to W-L when a bracket has games but no
+  rated result) and top-3 matchups (`CompTable`, compact/read-only) for any
+  claimed character with synced matches. The "character PvP overview" half
+  of this item was already covered by existing work (bracket toggle, CR
+  cards, vsComps tables, the new stat tiles) - the real gap was the profile
+  page having zero performance data. No new backend/aggregation: reuses the
+  same query hook, stat functions, and table component the character page
+  already uses; per-character privacy was already enforced independently by
+  both the profile and matches endpoints. Verified against a real public
+  profile (Mindflayz) across a match-having character, a matchless one, and
+  a private one correctly excluded from the roster entirely.
 - **PvP Overview stat categories** (wow-classic-armory) - a small
   always-visible stat row (Avg DPS, Avg HPS, Trinket forced <60s, Interrupt
   efficiency) above the existing threshold-gated coaching tips on the PvP
