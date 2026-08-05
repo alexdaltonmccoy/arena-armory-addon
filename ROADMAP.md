@@ -155,6 +155,10 @@ companion (`C:\dev\arena-armory-desktop`), and the web app / API
   announced, updated as info drips — doubles as port-planning market research.
   This unblocks the "Blog / news (SEO)" item below (its stated precondition —
   S3 PvP lists shipped — is now met) with a concrete first content arc.
+  **Added weight (2026-08-04): also the plan for the AdSense "low value
+  content" rejection** — see "Competitive position & revenue plan" below.
+  Real editorial writing is exactly what a re-review needs; request review
+  again once these ship.
 
 ## Shipped recently
 
@@ -305,26 +309,52 @@ classic addons:** Reddit (r/classicwow, r/worldofpvp) + class Discords +
 streamers using the frames on stream — the S3 window and BlizzCon week are the
 moments; fold into the Rebbel dogfood campaign rather than ad-hoc posting.
 
-**Revenue moves, ROI-ranked:**
-1. **Programmatic meta pages (Murlok model for TBC Anniversary)** — auto-generated
-   per-spec gear/talent/comp pages from the Blizzard leaderboard API + our own
-   uploaded-match aggregates (comp winrates by bracket — data nobody else has).
-   Near-zero marginal cost per page, direct AdSense multiplier on the S3 spike.
-   v0 in September; the S3/BlizzCon traffic makes every indexed page worth more.
-2. **Public leaderboard + cutoff tracker pages** — commoditized (4 free sites do
-   it) but cheap via the same API, and cutoff-checking is a daily-habit visit
-   that compounds ad impressions. Bundle with #1's crawl.
-3. **ArenaAnalytics import** — one-time importer from ArenaAnalytics
-   SavedVariables → instant match-history on our site. Turns the 154K-download
-   sleeping risk into a growth channel ("bring your history with you") and
-   seeds the aggregate dataset #1 needs. Cheap, high-leverage, defensive.
-4. **Premium tier ($3–5/mo), AFTER the S3 traffic read** — personal advanced
-   analytics: deeper coaching insights, vs-comp prep sheets, trend reports —
-   powered by the private match data competitors can't touch. Evidence base:
-   ad-free-only premium fails at niche scale (Murlok Patreon ~$174/mo), but
-   data-backed premium has precedent (PvPQ shipping AI coaching on retail;
-   Icy Veins selling log reviews). Price like Icy Veins/Wowhead (cheap,
-   annual-friendly), not like Skill-Capped — we're not selling a curriculum.
+**AdSense reality check (2026-08-04): rejected for "low value content."**
+Google's automated review flagged the site before requesting a re-review.
+This is the known failure mode for armory/lookup-tool sites specifically —
+thousands of near-identical Blizzard-API character pages can swamp the
+crawl and read as thin/auto-generated even with real guide content sitting
+alongside them. Two things follow from this, both reflected in the
+re-ranked list below: **(a)** the #1-ranked revenue move as originally
+written (programmatic meta pages) would add *more* templated pages right
+now — reinforcing the exact signal that got the site rejected — so it's
+paused until re-review, not built first. **(b)** the BlizzCon speculation
+pieces (see Next up) are real editorial writing and get bumped up in
+priority partly *because* they'd help a re-review, not just for the traffic
+event. Plan: ship the BlizzCon pieces, request AdSense review again, then
+resume the programmatic-pages work once either approved or the
+content-quality signal is clearly stronger. AdSense isn't abandoned — it
+was never the durable plan anyway (see the declining-search caveat above) —
+just no longer sequenced first.
+
+**Revenue moves, ROI-ranked (re-ranked 2026-08-04 for the AdSense hold):**
+1. **Premium tier ($3–5/mo)** — moved up: doesn't need Google's approval or
+   the S3 traffic-read gate it was originally waiting on, and is the more
+   durable long-term bet regardless (rides the addon-loop moat directly,
+   not the declining-search trade). Personal advanced analytics: deeper
+   coaching insights, vs-comp prep sheets, trend reports — powered by the
+   private match data competitors can't touch. Evidence base: ad-free-only
+   premium fails at niche scale (Murlok Patreon ~$174/mo), but data-backed
+   premium has precedent (PvPQ shipping AI coaching on retail; Icy Veins
+   selling log reviews). Price like Icy Veins/Wowhead (cheap,
+   annual-friendly), not like Skill-Capped — we're not selling a
+   curriculum. Also: if ads exist at all, "ad-free" becomes part of the
+   premium pitch — another reason not to abandon AdSense entirely.
+2. **ArenaAnalytics import** — unaffected by the AdSense hold (importing
+   existing users' match history isn't new templated content). One-time
+   importer from ArenaAnalytics SavedVariables → instant match-history on
+   our site. Turns the 154K-download sleeping risk into a growth channel
+   ("bring your history with you") and seeds the aggregate dataset #3
+   needs. Cheap, high-leverage, defensive.
+3. **Programmatic meta pages (Murlok model for TBC Anniversary)** — **paused
+   until AdSense re-review** (see above), not cancelled. Auto-generated
+   per-spec gear/talent/comp pages from the Blizzard leaderboard API + our
+   own uploaded-match aggregates (comp winrates by bracket — data nobody
+   else has). Near-zero marginal cost per page, direct AdSense multiplier
+   once approved.
+4. **Public leaderboard + cutoff tracker pages** — same pause as #3 (also
+   programmatic/templated). Commoditized (4 free sites do it) but cheap via
+   the same API; bundle with #3's crawl once that resumes.
 5. **What NOT to build:** video training (Skill-Capped's game — needs a content
    machine + YouTube funnel), coaching marketplace (no working precedent in the
    niche), donations (consistently fails: every free ladder site is coffee-money).
