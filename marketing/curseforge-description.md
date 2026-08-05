@@ -25,6 +25,14 @@ Arena Armory is a complete arena toolkit in the spirit of Gladius, Gladdy, and G
 
 Shipped voice clips call out enemy trinkets, CC, major cooldowns (Bubble, Cloak, Ice Block, …), drinking, resurrects, and low health — GladiatorlosSA-style, no extra downloads. Optional text-to-speech is available but off by default.
 
+## Party Callouts & Automark
+
+Major cooldowns, trinket use, and CC walls get called out in party chat too (majors only — no spam), and class raid icons are auto-assigned on your team in arena so everyone's on the same page at the gates.
+
+## Season 3 Currency Tracking
+
+Tracks your honor, arena points, and battleground marks live as you earn them, synced through the desktop app to power affordability bars on arenaarmory.com's Upgrades tab — see exactly what Season 3 gear you can afford before you buy it.
+
 ## Match Recorder
 
 Every arena match is saved automatically: map, bracket, both teams with classes and specs, result, duration, deaths timeline, and the full scoreboard. Pair it with the **Arena Armory desktop app** to sync your history to [arenaarmory.com](https://arenaarmory.com) and get winrate breakdowns by comp, map, and bracket — your matches belong to your character, viewable by anyone, like an armory for arena.
