@@ -405,6 +405,24 @@ just no longer sequenced first.
 
 ## Later
 
+- **Party cooldown tracker (addon concept, added 2026-08-05 from Alex)** -
+  mirror the existing enemy cooldown tracker (`Modules/Cooldowns.lua` -
+  first-observed-use icons anchored under each frame) for your own party
+  instead of just the enemy team. Same underlying constraint as enemy
+  tracking applies: WoW doesn't expose other players' cooldowns directly,
+  so party CDs would be inferred from observed casts the same way enemy
+  CDs already are - the tracking technique is proven, just pointed at
+  `party1`-`party4` instead of `arena1`-`arena5`. Real scoping question
+  before building: there are no custom party frames today (only
+  `PartyMark.lua` automark + `Announcer.lua` party chat callouts layer on
+  top of Blizzard's default party frames) - decide whether to attach
+  cooldown icons onto the default party frames (lighter, more like OmniCD)
+  or build a custom party frame row to match the enemy-frame styling
+  (bigger scope, more "complete arena toolkit" cohesive). OmniCD is the
+  closest existing addon doing party-side CD tracking today, similar to
+  how Gladius/Gladdy/GladiusEx are the enemy-frame precedents already named
+  in the CurseForge listing - worth a quick look at what it does well/
+  poorly before committing to an approach.
 - **Sitewide Cinzel-on-data font audit** - carved out of the 2026-08-04
   Upgrades tab overhaul: Upgrades itself doesn't misuse the display font, so
   the "unreadable in some places" feedback points at other screens
