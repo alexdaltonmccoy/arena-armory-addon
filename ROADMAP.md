@@ -139,26 +139,35 @@ companion (`C:\dev\arena-armory-desktop`), and the web app / API
     user happens to paste a `/channel/{id}` URL. Needs a YouTube Data API
     key + quota + somewhere to cache the resolved ID - real new
     infrastructure, revisit if worth it.
-- **BlizzCon 2026 content play (added 2026-08-04 — see C:\dev\PORTFOLIO_ROADMAP.md
-  Arena section + STRATEGY_ASSESSMENT_2026-08.md)** - Blizzard has officially
-  committed to addressing "Classic's future" at BlizzCon (Sep 12–13); Classic+
-  is rumored, not confirmed ("Project Camelot" datamine, ~29 encrypted "Classic
-  1.60" builds since Oct 2025), WotLK progression is the other candidate. Either
-  outcome answers this product's expansion-lifecycle risk. Three beats, all on
-  the existing expo-router static SEO infra (same shape as the S3 transition
-  guide — FAQ JSON-LD, Confirmed/Likely/Unknown fact tagging, internal links):
-  **(1) late Aug–early Sep, AFTER Sep 1 work:** 2–3 speculation pieces
-  ("Classic+ — everything we know", "WotLK Classic: what it means for arena
-  PvP", "BlizzCon 2026 predictions") — builds the URL equity day-of searches
-  land on. **(2) Sep 12–13:** live-updated announcement coverage + arena-player
-  reaction. **(3) post:** evergreen "everything we know" hub for whatever was
-  announced, updated as info drips — doubles as port-planning market research.
-  This unblocks the "Blog / news (SEO)" item below (its stated precondition —
-  S3 PvP lists shipped — is now met) with a concrete first content arc.
+- **BlizzCon 2026 content play (added 2026-08-04, first 2 pieces shipped +
+  live 2026-08-05 — see C:\dev\PORTFOLIO_ROADMAP.md Arena section +
+  STRATEGY_ASSESSMENT_2026-08.md)** - Blizzard has officially committed to
+  addressing "Classic's future" at BlizzCon (Sep 12–13); Classic+ is
+  rumored, not confirmed ("Project Camelot" datamine, Patch 1.60 build since
+  Oct 2025), WotLK progression is the other candidate. Either outcome
+  answers this product's expansion-lifecycle risk. **Shipped 2026-08-05, at
+  arenaarmory.com/news:** a new dedicated `/news` section (kept separate
+  from the class/spec guides — Alex's call, so neither clutters the other),
+  with 2 of the planned 3 speculation pieces live: "WoW Classic+ (Project
+  Camelot): Everything We Know" and "WotLK Classic Anniversary: What It
+  Would Mean for Arena PvP" - both fact-tagged Confirmed/Likely/Unknown
+  against real sources (Wowhead, the Jan 29 State of Azeroth stream, patch
+  history), cross-linked, with WoW-icon-CDN visuals (hero icon + per-event
+  timeline icons + confidence-tinted fact rows). The 3rd piece ("BlizzCon
+  2026 predictions") is deliberately held until a real new leak surfaces
+  rather than shipped as filler - Alex's call, agreed. Still open: **(2)
+  Sep 12–13:** live-updated announcement coverage + arena-player reaction.
+  **(3) post:** evergreen hub update for whatever was announced, updated as
+  info drips - doubles as port-planning market research. This unblocks the
+  "Blog / news (SEO)" item below (its stated precondition - S3 PvP lists
+  shipped - is now met) with a concrete first content arc, now with its own
+  home instead of a placeholder.
   **Added weight (2026-08-04): also the plan for the AdSense "low value
   content" rejection** — see "Competitive position & revenue plan" below.
-  Real editorial writing is exactly what a re-review needs; request review
-  again once these ship.
+  Real editorial writing is exactly what a re-review needs; **the 2 shipped
+  pieces are enough to request review again whenever Alex wants to trigger
+  it** (Google Search Console / AdSense dashboard - only-Alex action, not
+  something this session can do).
 - **"Classic+ Waiting Room" campaign via Rebbel + MerchMaxx (P1, added
   2026-08-05 from C:\dev\ROADMAP_ADDENDUM_2026-08-05.md)** — pre-BlizzCon
   timing (Sep 12–13), doubles as Rebbel dogfood campaign #2 (after
@@ -173,6 +182,25 @@ companion (`C:\dev\arena-armory-desktop`), and the web app / API
 
 ## Shipped recently
 
+- **BlizzCon news section + first 2 speculation pieces (2026-08-05)**
+  (wow-classic-armory, live at arenaarmory.com/news) - new `/news` route
+  (hub page + top-nav entry + sitemap generator registration) kept
+  separate from `/guides` per Alex's IA feedback ("don't clutter the
+  guides page"). Two fact-tagged pieces shipped: the Classic+/Project
+  Camelot "everything we know" article (moved here from its original
+  `/guides` location) and a new WotLK Classic Anniversary piece covering
+  what a Wrath rerun would actually change for arena (Death Knight, Dual
+  Talent Specialization, gear itemization) - grounded in the real
+  2022–2023 WotLK Classic re-release's patch history rather than forum
+  speculation, and explicitly hedged that a Wrath Anniversary may not even
+  be the same BlizzCon announcement as Classic+ (Patch 1.60's vanilla-era
+  signature argues against Camelot being Wrath content). Both pieces got a
+  visual pass (Alex's ask): WoW icon CDN hero icons, per-timeline-event
+  icons, and confidence-tinted left rails on every Confirmed/Likely/Unknown
+  fact row. `tsc --noEmit` clean, real `npm run build:web` production
+  build verified, all icons confirmed loading in-browser, pushed to
+  master and deployed live via Vercel's GitHub integration - verified
+  serving on the production domain.
 - **Live Twitch embed on public profiles (web)** (wow-classic-armory) -
   scoped down from "Gamer profiles (richer)" to the one piece that was
   actually contained; "featured players" and "more profile depth" parked
