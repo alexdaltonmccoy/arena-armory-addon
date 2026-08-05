@@ -1,8 +1,8 @@
 # Arena Armory
 
-**Arena enemy frames, trinket & DR tracking, an audio announcer, and automatic match history recording — in one addon, built for TBC Classic (Anniversary).**
+**Arena enemy frames, trinket & DR tracking, an audio announcer, and automatic match history & analytics — in one addon, built for TBC Classic (Anniversary).**
 
-Arena Armory is a complete arena toolkit in the spirit of Gladdy and GladiusEx, rebuilt from scratch for the modern TBC Anniversary client — plus something no other arena addon does: it records every match you play so you can review your history, comps, and winrates on [arenaarmory.com](https://arenaarmory.com).
+Arena Armory is a complete arena toolkit in the spirit of Gladius, Gladdy, and GladiusEx, rebuilt from scratch for the modern TBC Anniversary client — plus something no other arena addon does: it records every match you play so you can review your match history and analytics (comps, maps, and winrates) on [arenaarmory.com](https://arenaarmory.com).
 
 ## Enemy Frames
 
