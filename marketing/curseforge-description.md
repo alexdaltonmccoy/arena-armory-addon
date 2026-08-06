@@ -37,6 +37,15 @@ Tracks your honor, arena points, and battleground marks live as you earn them, s
 
 Every arena match is saved automatically: map, bracket, both teams with classes and specs, result, duration, deaths timeline, and the full scoreboard. Pair it with the **Arena Armory desktop app** to sync your history to [arenaarmory.com](https://arenaarmory.com) and get winrate breakdowns by comp, map, and bracket — your matches belong to your character, viewable by anyone, like an armory for arena.
 
+## Switching from ArenaAnalytics?
+
+You don't have to start your history over. The desktop app can import your
+existing ArenaAnalytics match history straight from its SavedVariables —
+one click, and your old games show up on arenaarmory.com alongside
+everything Arena Armory records going forward. It only pulls in games your
+own addon didn't already record, so nothing gets duplicated if you run both
+for a while during the switch.
+
 ## Quick Start
 
 - `/aa` — options
