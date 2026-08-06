@@ -175,19 +175,49 @@ companion (`C:\dev\arena-armory-desktop`), and the web app / API
   see C:\dev\PORTFOLIO_ROADMAP.md's dogfood-sequence note
   (MerchMaxx done → Arena pre-BlizzCon → Sobermaxx Sept → Faithmaxx Nov).
 - **CurseForge: post a comment asking for feedback (P2, added 2026-08-05)**
-  — bundle with the listing-optimization pass already queued above
-  (~30 min total for both). **Description source refreshed 2026-08-05**
-  (`marketing/curseforge-description.md`) — was stale since 7/26, missing
-  Season 3 currency tracking (addon 1.6.0) and party callouts/automark
-  (v1.7.0/1.7.1); both added, S3 currency worth leading with given Season 3
-  starts Sep 1. Still needs Alex's manual paste into the CurseForge
-  dashboard (description, the Summary-field one-liner from 8/4, and the
-  feedback comment) — no CurseForge credentials in-session.
+  — **description pasted live by Alex 2026-08-06** (`marketing/curseforge-description.md`,
+  now covering S3 currency tracking, party callouts/automark, and the
+  ArenaAnalytics import feature). Still open: the feedback comment itself
+  and the separate Summary-field one-liner (search-weighted, not stored
+  in-repo) — quick manual dashboard items, ~5 min each.
 - **Build Arena MCP (P3, parking lot, added 2026-08-05)** — park until
   after Sep 1; revisit during Season 3.
+- **Premium tier ($3–5/mo) — scoping started 2026-08-06, paused mid-scope**
+  at Alex's request to brainstorm further. Now the #1-ranked revenue move
+  (ArenaAnalytics import, #2, shipped). Research already done and doesn't
+  need repeating when resumed: Battle.net OAuth + Firebase auth model
+  (`api/_lib/auth.ts`, `lib/authContext.tsx`), existing free coaching/stats
+  code (`lib/matchStats.ts`, `matchInsights.ts`, `matchCoaching.ts`,
+  `matchupStats.ts` — all client-computed, no gating infra exists yet,
+  greenfield), and rebbel-v2's proven Stripe pattern to mirror
+  (`billingAccounts/{uid}` doc, checkout/portal/webhook API routes). Open
+  product decisions for when Alex resumes: what's actually premium (leading
+  candidate: population percentile benchmarks + full match-history export,
+  since free already ships rich per-user coaching — re-gating that would be
+  user-hostile), exact price point, and whether annual pricing ships day one.
 
 ## Shipped recently
 
+- **Session close-out, 2026-08-06: news polish, footer credit, site-side
+  dedupe cleanup.** (1) The Season 3 transition guide is now cross-linked
+  into `/news` as a third card ("Season 3 Watch") alongside the two
+  BlizzCon pieces — Alex's call that it's genuinely time-sensitive event
+  coverage, not evergreen guide content, but its URL/SEO/internal-link
+  equity (home, guides index, Upgrades wallet strip, every PvP BiS guide)
+  stayed untouched rather than moved. The page itself was also brought up
+  to the same visual bar as the newer pieces: hero icon, per-timeline-event
+  icons, confidence-tinted fact rows — all verified loading in-browser and
+  live on production. (2) A one-line alexmccoy.dev credit was added to the
+  site's home footer ("Built solo by Alex McCoy...") — a low-key inbound
+  lead channel off Arena Armory's existing trusted user base, per
+  `alexmccoy-dev/docs/PITCH_DRAFTS.md` §5's recommended copy, verified live.
+  (3) The ArenaAnalytics-import duplicates created during live-testing were
+  still on the site (local cleanup only fixed the desktop app) — wrote a
+  reusable admin script (`wow-classic-armory/scripts/dedupe-arena-analytics-imports.ts`,
+  same time-window dedup logic as the desktop fix) and ran it against
+  production: found and removed 3 duplicate docs, verified 0 remain.
+  Reusable for any real user who hits the same both-addons-enabled pattern,
+  not just this account.
 - **ArenaAnalytics one-time match-history importer (2026-08-05)**
   (arena-armory-desktop) - revenue-plan move #2 (see "Competitive position
   & revenue plan" below). Reverse-engineered the closed-source addon's
