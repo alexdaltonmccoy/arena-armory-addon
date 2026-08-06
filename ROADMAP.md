@@ -188,6 +188,23 @@ companion (`C:\dev\arena-armory-desktop`), and the web app / API
 
 ## Shipped recently
 
+- **ArenaAnalytics one-time match-history importer (2026-08-05)**
+  (arena-armory-desktop) - revenue-plan move #2 (see "Competitive position
+  & revenue plan" below). Reverse-engineered the closed-source addon's
+  SavedVariables format from its own shipped Lua (no public repo or
+  documented schema exists) and mapped it into our own `ArenaMatch` shape:
+  date/bracket/outcome/match-type/ratings/map/comps for all 3 TBC arenas,
+  skipping Solo Shuffle (not a TBC Anniversary bracket) rather than
+  mis-tagging it. Zero site changes needed - `/api/matches/import` already
+  accepts sparse matches - so this is entirely a desktop-app feature reusing
+  the existing addon sync/upload pipeline. Scan-then-confirm UI ("Check for
+  ArenaAnalytics history" → "Import N matches"). Tested against a synthetic
+  fixture built from the decoded schema (no real sample file available this
+  session); `tsc --noEmit` + `electron-vite build` both clean. Scope
+  decision: not building an ongoing service to track ArenaAnalytics releases
+  and auto-regenerate the decode logic - it's a one-time backfill tool for a
+  third-party dependency we don't control, not a live sync; revisit
+  reactively if it stops finding matches for real users, not proactively.
 - **BlizzCon news section + first 2 speculation pieces (2026-08-05)**
   (wow-classic-armory, live at arenaarmory.com/news) - new `/news` route
   (hub page + top-nav entry + sitemap generator registration) kept
@@ -385,12 +402,24 @@ just no longer sequenced first.
    annual-friendly), not like Skill-Capped — we're not selling a
    curriculum. Also: if ads exist at all, "ad-free" becomes part of the
    premium pitch — another reason not to abandon AdSense entirely.
-2. **ArenaAnalytics import** — unaffected by the AdSense hold (importing
-   existing users' match history isn't new templated content). One-time
-   importer from ArenaAnalytics SavedVariables → instant match-history on
-   our site. Turns the 154K-download sleeping risk into a growth channel
-   ("bring your history with you") and seeds the aggregate dataset #3
-   needs. Cheap, high-leverage, defensive.
+2. **ArenaAnalytics import** — **shipped 2026-08-05** (arena-armory-desktop).
+   Unaffected by the AdSense hold (importing existing users' match history
+   isn't new templated content). One-time importer from ArenaAnalytics
+   SavedVariables → instant match-history on our site. Turns the
+   154K-download sleeping risk into a growth channel ("bring your history
+   with you") and seeds the aggregate dataset #3 needs. Cheap, high-leverage,
+   defensive. Build notes: ArenaAnalytics is closed-source (no public repo),
+   so the format was reverse-engineered from its own shipped Lua source —
+   a compact per-character table keyed by small negative integers, names/
+   realms resolved via shared index arrays, specs via an addon-internal ID
+   scheme. Needed zero site changes (`/api/matches/import` already accepts
+   sparse matches). Scan-then-confirm flow in the desktop app UI ("Check for
+   ArenaAnalytics history" → "Import N matches"), synthetic-fixture tested
+   (no real sample file was available), `tsc`/build clean. Deliberately not
+   building a service to track ArenaAnalytics releases and auto-regenerate
+   this decode — one-time backfill tool for a dependency we don't control,
+   not a live integration; fix reactively if it stops finding matches for
+   real users.
 3. **Programmatic meta pages (Murlok model for TBC Anniversary)** — **paused
    until AdSense re-review** (see above), not cancelled. Auto-generated
    per-spec gear/talent/comp pages from the Blizzard leaderboard API + our
