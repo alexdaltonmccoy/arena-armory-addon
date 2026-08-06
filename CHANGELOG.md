@@ -1,5 +1,13 @@
 # Changelog
 
+## v1.7.8 (2026-08-05)
+- Fixed a teammate or opponent sometimes permanently showing as an unnamed
+  "Unknown" entry in match history instead of their real name/class,
+  usually in 3v3+ games where a group forms right as the match starts. WoW
+  briefly returns a placeholder name for players it hasn't loaded info for
+  yet, and that placeholder was being recorded as if it were real — now
+  it's skipped so the real name gets captured once it's actually known.
+
 ## v1.7.7 (2026-08-04)
 - Fixed Marks of Honor sometimes showing as 0 right after logging in or
   reloading. A timing issue could read your bags before they were fully

@@ -177,8 +177,21 @@ function Recorder:SnapshotFriendlyTeam()
 
     local function UpsertUnit(unit)
         if UnitExists(unit) and not UnitIsUnit(unit, "player") then
-            local _, classToken = UnitClass(unit)
-            Upsert(AA.StripRealm(UnitName(unit)), classToken)
+            local name = UnitName(unit)
+            -- UnitName() returns the literal string "Unknown" (not nil) when
+            -- the client hasn't cached this unit's name yet - common right
+            -- after a freshly-formed group loads in. Upsert dedupes by name,
+            -- so committing "Unknown" here permanently occupies that
+            -- teammate's slot: a later call (this function reruns via
+            -- OnRosterUpdate as the roster settles) that finally sees the
+            -- real name inserts it as a SEPARATE entry instead of fixing the
+            -- placeholder, since MergeScoreboardRosters only adds missing
+            -- members, it never replaces a wrong one. Skipping here just
+            -- waits for a call where the name has actually resolved.
+            if name and name ~= "Unknown" then
+                local _, classToken = UnitClass(unit)
+                Upsert(AA.StripRealm(name), classToken)
+            end
         end
     end
     for i = 1, 4 do UpsertUnit("party" .. i) end
@@ -244,7 +257,17 @@ function Recorder:SnapshotEnemyTeam()
             end
             current.enemyTeam[i] = current.enemyTeam[i] or {}
             local e = current.enemyTeam[i]
-            e.name = e.name or AA.StripRealm(UnitName(unit))
+            -- Same "Unknown" placeholder issue as SnapshotFriendlyTeam above,
+            -- but stickier here: `e.name or X` never re-evaluates once any
+            -- truthy value (including the bad "Unknown" placeholder) is set,
+            -- so a bad early capture would otherwise never self-correct even
+            -- once the real name resolves later in the match.
+            if not e.name or e.name == "Unknown" then
+                local name = UnitName(unit)
+                if name and name ~= "Unknown" then
+                    e.name = AA.StripRealm(name)
+                end
+            end
             e.class = e.class or classToken
             e.spec = AA.detectedSpecs[i] or e.spec
         end
