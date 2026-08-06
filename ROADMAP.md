@@ -205,6 +205,33 @@ companion (`C:\dev\arena-armory-desktop`), and the web app / API
   and auto-regenerate the decode logic - it's a one-time backfill tool for a
   third-party dependency we don't control, not a live sync; revisit
   reactively if it stops finding matches for real users, not proactively.
+  **Live-tested against Alex's real data the same day, 2 real bugs found and
+  fixed**: (1) spec IDs ending in a 0 (e.g. 70) mean "class identified, spec
+  never observed before the match ended" per the addon's own
+  `Helpers:IsClassID`/`IsSpecID` convention - the original decode only
+  handled fully-resolved specs, silently showing "?  ?" instead of at least
+  the class. (2) Playing with both addons enabled produces two records of
+  the same live match (native "AA-..." and imported "aa-import-..." guids
+  never collide) - added time-window dedup (per character, 180s) wired into
+  both scan and import so future double-recording is prevented, plus a
+  "Remove duplicate imports" cleanup action for matches already
+  double-imported before that fix existed (local store only - no delete
+  endpoint exists on the site to retract already-uploaded dupes; not
+  building one for 2 test records on one account, revisit if this becomes a
+  real multi-user need). Both fixes covered by new test cases.
+- **WoW addon "Unknown" teammate/opponent bug (addon v1.7.8, 2026-08-05)**
+  - found via the ArenaAnalytics live-testing above, but a pre-existing bug
+  in our own `Recorder.lua`, unrelated to the importer. `UnitName()` returns
+  the literal string "Unknown" (not nil) when the client hasn't cached a
+  unit's name yet - common right as a freshly-formed 3v3+ group loads in.
+  Both `SnapshotFriendlyTeam` (dedupes by name, so "Unknown" permanently
+  occupied that roster slot) and `SnapshotEnemyTeam` (`e.name = e.name or
+  X` never re-evaluates once any truthy value is set, stickier - a bad
+  first capture could never self-correct) recorded that placeholder as if
+  it were real. Fix: skip the unit if the name is still "Unknown" rather
+  than committing it; the existing repeated-snapshot / scoreboard-merge
+  safety nets pick up the real name once it resolves. Verified with
+  `node .tools/check-lua.js`, tagged and released - live on CurseForge/Wago.
 - **BlizzCon news section + first 2 speculation pieces (2026-08-05)**
   (wow-classic-armory, live at arenaarmory.com/news) - new `/news` route
   (hub page + top-nav entry + sitemap generator registration) kept
