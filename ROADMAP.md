@@ -176,7 +176,13 @@ companion (`C:\dev\arena-armory-desktop`), and the web app / API
   (MerchMaxx done → Arena pre-BlizzCon → Sobermaxx Sept → Faithmaxx Nov).
 - **CurseForge: post a comment asking for feedback (P2, added 2026-08-05)**
   — bundle with the listing-optimization pass already queued above
-  (~30 min total for both).
+  (~30 min total for both). **Description source refreshed 2026-08-05**
+  (`marketing/curseforge-description.md`) — was stale since 7/26, missing
+  Season 3 currency tracking (addon 1.6.0) and party callouts/automark
+  (v1.7.0/1.7.1); both added, S3 currency worth leading with given Season 3
+  starts Sep 1. Still needs Alex's manual paste into the CurseForge
+  dashboard (description, the Summary-field one-liner from 8/4, and the
+  feedback comment) — no CurseForge credentials in-session.
 - **Build Arena MCP (P3, parking lot, added 2026-08-05)** — park until
   after Sep 1; revisit during Season 3.
 
