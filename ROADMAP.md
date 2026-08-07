@@ -195,9 +195,90 @@ companion (`C:\dev\arena-armory-desktop`), and the web app / API
   candidate: population percentile benchmarks + full match-history export,
   since free already ships rich per-user coaching — re-gating that would be
   user-hostile), exact price point, and whether annual pricing ships day one.
+  Deliberately still paused — today's session fixed the account-claim funnel
+  from ~0 real accounts, but no growth data exists yet; resume once Android/
+  iOS review clears and there's a real signal to size premium against, not
+  before.
 
 ## Shipped recently
 
+- **Session close-out, 2026-08-06 (evening): desktop app redesign, a real
+  upload-tracking bug fix, iOS resubmitted, store listing copy shipped.**
+  Following up on the afternoon's claim-funnel fix (below), live-tested the
+  new v1.4.0 build with Alex and got concrete feedback: addon-disabled
+  warning flagged leveling alts nobody cared about (WoW's local WTF folder
+  has no character-level data to filter on) — removed the whole feature;
+  "Your characters" (already scoped to characters with recorded games) plus
+  a passive in-game-enable hint replaces it. Settings/checkboxes/Add-
+  SavedVariables/Upload moved behind a new gear-icon overflow menu;
+  ArenaAnalytics import collapses behind a toggle with a real card
+  treatment (Alex: couldn't tell it was clickable); base font size bumped
+  to 15px everywhere (Alex: "have to squint"); footer links became real
+  store badges matching the website's own `StoreBadges` component,
+  including a new Google Play badge; "Scan now" → "Scan & Upload" (now
+  always uploads, not just when auto-upload happens to be on); checkmark/x
+  icon added next to linked status. **Real bug found via live production
+  testing, not just code review**: the "Upload (N)" badge never cleared —
+  root cause was `body.imported ?? fallback` treating the server's `{
+  imported: [], skipped: N }` response (already-present items come back
+  "skipped," not "imported") as a real value, so `??` never fell back and
+  nothing ever got marked synced locally. This account's real data was
+  stuck: 442 matches + 5 currency snapshots already live on
+  arenaarmory.com, silently re-sent on every click, never marked uploaded
+  locally. Fixed by marking the whole batch synced on any 200 response
+  (verified live: both counts dropped to zero). Shipped as v1.5.0 then
+  v1.5.1 (bugfix + polish separately versioned), both released clean once
+  the GitHub Actions outage (below) cleared. Also this session: **iOS
+  build 9 (1.1.0) uploaded and the stale App Store Connect submission
+  swapped for it** (Alex confirmed re-submitted, "Waiting for Review");
+  **Promotional Text and Description shipped** to both App Store Connect
+  and Play Console from `wow-classic-armory/store-listing.md` (already
+  drafted, just never pasted in) — description gained a new "YOUR OWN
+  ARENA STATS" section cross-promoting the addon/desktop app/free account,
+  deliberate funnel reinforcement given the afternoon's findings; Play
+  Store app icon confirmed already correct in `store-assets/` (no new
+  asset needed, contrary to an earlier assumption); Play Store title
+  corrected to stay plain "Arena Armory" (Alex's catch — the CurseForge
+  precedent puts keywords in the description, not the title).
+  testerscommunity.com closed-testing submitted to Google for review
+  (Internal-testing track, no roster needed per Alex — just the opt-in
+  link once available).
+- **Session close-out, 2026-08-06 (afternoon): addon→account claim funnel
+  fixed, fresh Android + iOS builds shipped.** Real Firestore data showed
+  only 1 signed-in web account existed despite real addon distribution —
+  traced the funnel and found the desktop app silently self-provisions an
+  anonymous upload token and its status bar claimed "Linked to
+  arenaarmory.com" as soon as that existed (not actually true), so nobody
+  ever signed in. Fixed on both ends: `wow-classic-armory`'s `/matches` page
+  (the exact page the desktop app deep-links to) now shows a claim banner
+  with a real Battle.net sign-in CTA when a token exists but isn't linked,
+  reusing the existing OAuth flow; a new `GET /api/tokens/status` endpoint
+  lets the desktop app ask the real linked state instead of guessing.
+  `arena-armory-desktop` (v1.4.0) now reports accurate "Linked to your
+  account" vs. "Syncing anonymously" status, gives the claim CTA its own
+  gold `.btn-primary` style while every routine button drops to a muted
+  outline (Alex's ask: too many equal-weight buttons), and moves the
+  always-visible match table behind an Overview/Matches tab split.
+  Desktop release (v1.4.0) was blocked for ~4 hours by a genuine GitHub
+  Actions platform-wide outage (confirmed via githubstatus.com, ~15:22–
+  ~20:34 UTC 2026-08-06, not our code) — a `workflow_dispatch` retry
+  eventually succeeded once the outage partially cleared; the evening
+  session's v1.5.0/v1.5.1 releases (above) both went out clean on the
+  first try once it fully resolved. Separately: testerscommunity.com closed-testing
+  submission surfaced a real, pre-existing bug - three getting-started
+  screenshots (`web-debrief.png`, `web-matches.png`, `web-overview.png`)
+  were JPEGs saved with a `.png` extension, harmless on web but rejected by
+  Android's AAPT2 resource compiler, breaking every Android build since
+  they were added. Fixed by re-encoding in place; fresh Android build (.aab,
+  versionCode 13) and iOS build (1.1.0 build 9) both shipped via EAS same
+  session. iOS build 9 uploaded to App Store Connect; Alex removed the
+  stale 1.1.0 submission from review to swap in the new build (in progress
+  as of session end). Also delivered: testing-instructions draft for
+  testerscommunity's testers, a corrected Play Store title recommendation
+  (plain "Arena Armory," matching the CurseForge precedent - keywords
+  belong in the description field, not the title), and a real 512x512 PNG
+  app icon (Play's asset library only had 1024x1024 originals, which Play
+  rejects for the App icon field specifically).
 - **Session close-out, 2026-08-06: news polish, footer credit, site-side
   dedupe cleanup.** (1) The Season 3 transition guide is now cross-linked
   into `/news` as a third card ("Season 3 Watch") alongside the two
