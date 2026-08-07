@@ -177,9 +177,13 @@ companion (`C:\dev\arena-armory-desktop`), and the web app / API
 - **CurseForge: post a comment asking for feedback (P2, added 2026-08-05)**
   — **description pasted live by Alex 2026-08-06** (`marketing/curseforge-description.md`,
   now covering S3 currency tracking, party callouts/automark, and the
-  ArenaAnalytics import feature). Still open: the feedback comment itself
-  and the separate Summary-field one-liner (search-weighted, not stored
-  in-repo) — quick manual dashboard items, ~5 min each.
+  ArenaAnalytics import feature). **Summary field swapped live 2026-08-07 on
+  both CurseForge and Wago** — final text: "Gladius/Gladdy-style enemy
+  frames, GladiatorlosSA-style voice announcer, and automatic match
+  history/analytics synced to arenaarmory.com." (keeps the searched-incumbent
+  names plus the arenaarmory.com site mention that ties into the account-claim
+  funnel). Still open: the feedback comment itself — quick manual dashboard
+  item, ~5 min.
 - **Build Arena MCP (P3, parking lot, added 2026-08-05)** — park until
   after Sep 1; revisit during Season 3.
 - **Premium tier ($3–5/mo) — scoping started 2026-08-06, paused mid-scope**
@@ -202,6 +206,26 @@ companion (`C:\dev\arena-armory-desktop`), and the web app / API
 
 ## Shipped recently
 
+- **iOS crash-on-launch bug found and fixed while build 9 sat in Apple
+  review (2026-08-07)** (wow-classic-armory) - Alex reported a blocking
+  native `Alert` dialog covering the home screen on real-device TestFlight
+  testing ("Expo Head: Add the handoff origin to the Expo Config..."). Root
+  cause: `app.json`'s `extra.router.origin` was set to `false` (dating to
+  the 7/9 store-prep commit, before any page used `expo-router/head`);
+  once per-page SEO `<Head>` tags landed (`lib/seo.tsx`'s `PageMeta`, used
+  on `app/index.tsx` - the exact home screen in the report - and 11 other
+  routes), `expo-router` treats a falsy origin as unconfigured and in
+  production calls `alert()` instead of throwing, so every native user hit
+  this on first launch, unknowingly baked into the build Apple was actively
+  reviewing. Fixed by pointing `extra.router.origin` at the real
+  `https://arenaarmory.com` (matches `apiBaseUrl` and `seo.tsx`'s `SITE`
+  constant already used for canonical/OG URLs) - config-only change,
+  `tsc --noEmit` clean. Required a native rebuild to take effect: shipped
+  build **1.1.0 (10)** via `eas build`/`eas submit`
+  (`autoIncrement` bumped 9→10 automatically), installed and verified
+  working live on Alex's own device via TestFlight. Build 9 swapped for
+  build 10 in App Store Connect and re-submitted (Alex's action) —
+  **"Waiting for Review" as of 2026-08-07.**
 - **Session close-out, 2026-08-06 (evening): desktop app redesign, a real
   upload-tracking bug fix, iOS resubmitted, store listing copy shipped.**
   Following up on the afternoon's claim-funnel fix (below), live-tested the
