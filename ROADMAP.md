@@ -258,9 +258,36 @@ companion (`C:\dev\arena-armory-desktop`), and the web app / API
       the existing `api/**/*.ts` glob. Fixed by bumping the global
       default maxDuration instead of a per-route override (a ceiling, not
       a floor - harmless for every fast function that doesn't need it).
-    - **Still open:** rating-chart 7d/30d/season time
-      ranges + surfacing on character pages (RatingChart already exists —
-      this is a selector, not a build); ladder-history layer on character
+    - **Leaderboard visual redesign + rating-chart time ranges - SHIPPED
+      AND LIVE 2026-08-08, same session (Alex's design feedback pass on
+      the shipped page).** Ladder rows: name colored by class, a new
+      Class column with a talent-tree icon (`specIconUrl` - already
+      existed in `lib/guideIcons.ts`, unused until now) + spec label
+      (new cached `class-spec` per-character endpoint, reusing the same
+      `fetchClassAndSpec` built for demographics), faction icon moved
+      next to realm instead of the name. Rank-change indicator now
+      hidden entirely until a real prior-day snapshot exists (was
+      showing "—" on every single row on day 1 - noise, not signal).
+      Demographics moved above the ladder table (was buried below 50
+      rows + pagination, easy to miss) and simplified from a stacked
+      bar list to compact icon-forward chips - live-verified: real
+      talent-tree icons resolving correctly (e.g. Rogue's Eviscerate
+      icon for Combat spec), not just class crests. Cutoff cards switched
+      to `flex:1` (equal width) instead of sizing to each title's label
+      length - live-verified 5 cards on 3v3 all exactly 188px, 2v2's 2
+      cards each 484px (both uniform, no more "sized to the word" look).
+      Recent searches (home page + header search) swap the small faction
+      dot for a real character avatar on character entries; guilds keep
+      the dot (no Blizzard render image for guilds). **`RatingChart` gets
+      a 7d/30d/season selector** (`components/RatingChart.tsx`),
+      filtering each bracket's points client-side before plotting -
+      already used on character pages via `MatchHistory`, so no separate
+      wiring needed there. Date-filtering logic verified correct via a
+      standalone test (7d/30d/season buckets); couldn't click-test live
+      in-browser since real synced match-history data is still sparse
+      (effectively one uploading account today, per the 8/7 KPI
+      baseline) - noted honestly rather than claimed as browser-verified.
+    - **Still open:** ladder history layer on character
       pages for EVERY ladder character from snapshot diffs (added 8/8 —
       rating chart + per-session W/L deltas, parity with
       ironforge.pro's `/anniversary/player/` pages, which are full armory
