@@ -68,6 +68,88 @@ companion (`C:\dev\arena-armory-desktop`), and the web app / API
 
 ## Next up
 
+- **Ironforge.pro parity / "PvP destination" plan (added 2026-08-08, from the
+  competitive brief review — full reasoning, code-verified corrections, and
+  the §8 answers in `COMPETITIVE_RESPONSE_IRONFORGE_2026-08-08.md`, this
+  folder).** Strategy: copy Ironforge's consumption-UX/habit playbook
+  (leaderboards, archives, trend charts, omnipresent search, snapshot pages),
+  differentiate on match telemetry they structurally can't get. Starts
+  **Aug 14** (respects the Aug 7–13 portfolio dev freeze), Arena is priority
+  #1 through Sep 1.
+  - **P0, HARD DEADLINE Aug 18 (S2 season end): leaderboard ingest + S2
+    ladder snapshot.** No leaderboard ingestion exists anywhere today (the
+    brief's "we likely already hold the ratings data" was wrong — ratings are
+    per-character lookups via `api/_lib/character.ts` only). Spike the
+    Blizzard Anniversary pvp-leaderboard endpoint, ingest 2s/3s/5s per
+    realm/region as dated snapshots, capture daily through Aug 18 — the final
+    pre-reset capture becomes the immutable Season 2 archive. Miss this and
+    S2 archives are unrecoverable. (Spike de-risked 8/8: the pvp-leaderboard
+    endpoint family has existed for Classic progression since BCC S1 2021,
+    and `blizzardClient.ts` already speaks the `classicann` namespace family
+    with dynamic-kind support — one authenticated call to verify. Blizzard's
+    ladder API has a documented history of staleness incidents — our own
+    snapshot store is the answer, never point pages at the live API.)
+  - **P1, live by Sep 1 (S3 ladder-race traffic spike):** /leaderboards pages
+    (bracket/realm/region/faction/class filters, rank-change vs prior
+    snapshot, **title-cutoff cards with estimated placement ranks — the
+    daily-check habit loop, the most prominent element on Ironforge's own
+    ladder page (screenshot-verified 8/8)** — `noindex` until the AdSense
+    re-review clears, see revenue plan below); **persistent header search on
+    EVERY page of the site, players AND guilds (Alex directive 8/8 —
+    non-negotiable UX parity, not a nice-to-have;** cheap — nav is
+    `app/_layout.tsx`, `lib/recentSearches.ts` exists); rating-chart
+    7d/30d/season time ranges + surfacing on character pages (RatingChart
+    already exists — this is a selector, not a build); **ladder-history
+    layer on character pages for EVERY ladder character from snapshot diffs
+    (added 8/8** — rating chart + per-session W/L deltas, parity with
+    ironforge.pro's `/anniversary/player/` pages, which are full armory
+    pages with exactly this layer; ours already ARE full armory pages, so
+    this adds their one extra layer to pages we already have — no addon
+    needed, synced characters additionally get the match-level layer nobody
+    else has). Snapshot cadence: daily is fine for the S2 archive window;
+    **from Sep 1 run every 2–4h** (Ironforge updates multiple times/day —
+    intra-day diffs also power movers/activity feeds).
+  - **P2, early S3:** snapshot homepage redesign (search + ladder top-5 +
+    biggest movers above the fold); **recent-movement activity feed (added
+    8/8** — per-character W/L + rating change since last snapshot, "who's
+    queuing right now," mirrors Ironforge's `/activity/` page; cheap off the
+    intra-day snapshot diffs, folds into the homepage movers module or a
+    leaderboard tab); /seasons/tbc-s2 archive page + auto-freeze future
+    seasons (stable URLs, indexable post-re-review); spec representation at
+    rating tiers (ladder + top-N character crawls — needs NO addon data;
+    their `/charts/` does class-distribution-by-title, ours adds SPEC-level
+    + cutoff-history parity comes free from snapshots); participation stats
+    (active rated players per realm/bracket/week — falls out of snapshot
+    diffs. **Reframed 8/8 (screenshot-corrected): parity-plus, not
+    uncontested** — their census already blends ladder characters in, and
+    their charts page estimates games/day from W/L diffs ("Estimated tracked
+    games," their own label). Ours differentiates on what estimates can't
+    do: actual recorded games incl. unrated, real match durations, realm
+    cuts — "measured, not estimated").
+  - **P3, gated on data density:** comp winrate/duration meta dashboard (the
+    true differentiator, addon-data-powered) — precomputed aggregates, n≥50
+    per displayed cut, sample sizes labeled. 8/7 reality: 303 addon installs,
+    ~1 real uploading account — shipping this ungated today would read as one
+    account's match history and hurt credibility. Also P3: per-match OG/share
+    cards (match pages already exist and are public; this is unfurl polish +
+    addon acquisition loop).
+  - **Data-source map (explicit, 8/8):** Ironforge runs on TWO pipelines —
+    **warcraftlogs.com raid-upload data is the backbone of their anchor**
+    (population/census/demographics, the citation moat; Anniversary blends
+    in ladder characters too), while ALL of their arena product (ladders,
+    cutoffs, player pages, activity, charts) is Blizzard's pvp-leaderboard
+    API snapshotted + diffed, plus armory crawls. Everything in this parity
+    plan sits on the second pipeline. **Warcraft Logs evaluated and parked,
+    deliberately:** WCL's public GraphQL API is the same door Ironforge
+    used, so a population product is available to us any time — but it has
+    zero arena data, it's a second solo-maintained ingest, and a census
+    would be a me-too against their strongest product. Revisit only if
+    post-BlizzCon port planning makes a population story strategic.
+  - **Synergy:** the paused premium tier's leading candidate (population
+    percentile benchmarks) requires exactly this ladder ingest — P0 doubles as
+    the premium tier's data prerequisite.
+  - **Alex decisions needed:** trigger the AdSense re-review (gates indexing,
+    not building); confirm Aug 14 carve-in; density-threshold sign-off.
 - **Phase 3 — remaining toward Sep 1** (Anniversary dates from
   [Blizzard](https://news.blizzard.com/en-us/article/24291476/bcc-anniversary-edition-black-temple-arrives-august-27)):
   - **Aug 18** — Arena Season 2 ends (weekly restarts); leftover AP → honor (1:10).
@@ -474,6 +556,13 @@ companion (`C:\dev\arena-armory-desktop`), and the web app / API
 
 ## Competitive position & revenue plan (researched 2026-08-04 — sources in Cowork chat / STRATEGY_ASSESSMENT_2026-08.md changelog)
 
+**Update 2026-08-08:** an Ironforge.pro-specific competitive brief was reviewed
+against the actual codebase — verdict, corrections (including a hard Aug 18
+S2-snapshot deadline the brief missed), and the resulting prioritized parity
+plan live in `COMPETITIVE_RESPONSE_IRONFORGE_2026-08-08.md` + the new
+"Ironforge.pro parity" block at the top of Next up. Revenue move #4 below is
+amended by it (leaderboards unpaused via noindex-until-re-review).
+
 **The moat, verified:** nobody else in Classic closes the loop addon → desktop
 uploader → web analytics on PRIVATE match data. The field splits into public-API
 ladder sites (Ironforge.pro, XUNAMATE, WarcraftGear, classic-armory.org,
@@ -588,9 +677,17 @@ just no longer sequenced first.
    own uploaded-match aggregates (comp winrates by bracket — data nobody
    else has). Near-zero marginal cost per page, direct AdSense multiplier
    once approved.
-4. **Public leaderboard + cutoff tracker pages** — same pause as #3 (also
-   programmatic/templated). Commoditized (4 free sites do it) but cheap via
-   the same API; bundle with #3's crawl once that resumes.
+4. **Public leaderboard + cutoff tracker pages** — ~~same pause as #3 (also
+   programmatic/templated)~~ **amended 2026-08-08 by the Ironforge parity
+   plan (Next up):** the pause conflated the SEO play with the product play.
+   Leaderboards are now the P1 habit-formation feature for the S3 window —
+   built and live by Sep 1 but **`noindex` until the AdSense re-review
+   clears** (re-review is already unblocked; Alex triggers it in the
+   dashboard), then flipped indexable. Return visits and direct traffic —
+   Ironforge's actual moat — don't need Google; the SEO value arrives when
+   it's safe. The S2 ladder must be snapshotted **before Aug 18** regardless
+   (season end wipes it — see Next up P0). Cutoff trackers ride the same
+   ingest during S3.
 5. **What NOT to build:** video training (Skill-Capped's game — needs a content
    machine + YouTube funnel), coaching marketplace (no working precedent in the
    niche), donations (consistently fails: every free ladder site is coffee-money).
