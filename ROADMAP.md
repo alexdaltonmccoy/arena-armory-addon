@@ -148,10 +148,49 @@ companion (`C:\dev\arena-armory-desktop`), and the web app / API
       number on a public PvP-destination page is worse than not having
       the feature; needs real sourcing before it ships, not a guess under
       time pressure.
-    - **Still open:** persistent header search on EVERY page of the site,
-      players AND guilds (Alex directive 8/8 — non-negotiable UX parity,
-      not a nice-to-have; cheap — nav is `app/_layout.tsx`,
-      `lib/recentSearches.ts` exists); rating-chart 7d/30d/season time
+    - **Persistent header search — SHIPPED AND LIVE 2026-08-08**
+      (wow-classic-armory): search icon in `SiteHeader`, present on every
+      page (desktop nav row and mobile hamburger layout alike), not just
+      home. Player mode gets real typeahead — new `GET
+      /api/leaderboard/search?q=` prefix-matches names across all 3
+      brackets' latest snapshots (deduped, sorted by rating, short
+      in-memory cache since a Vercel instance re-scans ~2MB of Firestore
+      docs per keystroke otherwise). Guild mode (and the player fallback
+      for anyone not on this season's ladder) keeps the homepage's
+      existing exact realm+name lookup — Blizzard's API has no fuzzy
+      character/guild search, so that path was never going away, just
+      surfaced globally instead of home-only. Recent searches reused
+      as-is (`lib/recentSearches.ts`, `components/RecentSearches.tsx`).
+      Refactored `api/leaderboard.ts` → `api/leaderboard/index.ts` (matches
+      the existing `matches/index.ts` convention) so `leaderboard/search.ts`
+      could be a sibling; shared the pointer+snapshot read logic between
+      both in `api/_lib/leaderboards.ts`.
+      **Real production bug found and fixed live-testing this** (not a
+      cosmetic issue — this was silently broken before today, unrelated to
+      the search feature itself): `expo export`'s static prerender has no
+      real browser window, so `useWindowDimensions` reports a narrow
+      fallback at build time — every page's static HTML always shipped
+      with the narrow/hamburger header baked in. A desktop client
+      hydrating against that markup hit a structural mismatch (uncaught
+      React error #418); React patches the DOM to look right afterward,
+      but the failed hydration pass never attaches event handlers to that
+      subtree, so **nothing in the header responded to clicks on desktop**
+      (search, sign-in, anything `Pressable`) until some other state
+      change forced a real re-render. Caught because the new search button
+      visually looked fine but silently did nothing on a fresh desktop
+      tab — traced via a hydration-error console message, confirmed
+      pre-existing (not caused by this session's changes) by checking the
+      raw static-exported HTML directly. Fixed in the shared
+      `useIsNarrowScreen` hook: report the SSR's narrow default until
+      after mount, then switch to the real width, so the first client
+      render matches the server exactly and the layout swap happens as an
+      ordinary post-mount update instead of during hydration. Deployed and
+      re-verified end-to-end (typeahead, character nav, guild nav, recent
+      searches, mobile layout) via real DOM interaction in the Browser
+      pane — the pane's synthetic mouse clicks don't land in this
+      environment for an unrelated reason, so verification used dispatched
+      DOM events instead, same effect as a real click.
+    - **Still open:** rating-chart 7d/30d/season time
       ranges + surfacing on character pages (RatingChart already exists —
       this is a selector, not a build); ladder-history layer on character
       pages for EVERY ladder character from snapshot diffs (added 8/8 —
