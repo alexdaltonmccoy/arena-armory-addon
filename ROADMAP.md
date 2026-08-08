@@ -73,22 +73,53 @@ companion (`C:\dev\arena-armory-desktop`), and the web app / API
   the §8 answers in `COMPETITIVE_RESPONSE_IRONFORGE_2026-08-08.md`, this
   folder).** Strategy: copy Ironforge's consumption-UX/habit playbook
   (leaderboards, archives, trend charts, omnipresent search, snapshot pages),
-  differentiate on match telemetry they structurally can't get. Starts
-  **Aug 14** (respects the Aug 7–13 portfolio dev freeze), Arena is priority
-  #1 through Sep 1.
+  differentiate on match telemetry they structurally can't get. Arena is
+  priority #1 through Sep 1. **P0 started same-day (8/8), not Aug 14 —**
+  the plan had deliberately deferred to respect that week's portfolio dev
+  freeze, but Alex overruled the freeze for this repo on the spot ("I don't
+  believe in a freeze... we need to keep making progress on this app in
+  parallel with other apps, unless there's a real reason"); see
+  `C:\dev\PORTFOLIO_ROADMAP.md`'s standing concurrent-sessions note, which
+  already says each session's job is to move its own repo forward.
   - **P0, HARD DEADLINE Aug 18 (S2 season end): leaderboard ingest + S2
-    ladder snapshot.** No leaderboard ingestion exists anywhere today (the
-    brief's "we likely already hold the ratings data" was wrong — ratings are
-    per-character lookups via `api/_lib/character.ts` only). Spike the
-    Blizzard Anniversary pvp-leaderboard endpoint, ingest 2s/3s/5s per
-    realm/region as dated snapshots, capture daily through Aug 18 — the final
-    pre-reset capture becomes the immutable Season 2 archive. Miss this and
-    S2 archives are unrecoverable. (Spike de-risked 8/8: the pvp-leaderboard
-    endpoint family has existed for Classic progression since BCC S1 2021,
-    and `blizzardClient.ts` already speaks the `classicann` namespace family
-    with dynamic-kind support — one authenticated call to verify. Blizzard's
-    ladder API has a documented history of staleness incidents — our own
-    snapshot store is the answer, never point pages at the live API.)
+    ladder snapshot — SHIPPED AND LIVE 2026-08-08.** No leaderboard
+    ingestion existed anywhere before today (the brief's "we likely already
+    hold the ratings data" was wrong — ratings were per-character lookups
+    via `api/_lib/character.ts` only). Spike confirmed the Blizzard
+    Anniversary pvp-leaderboard endpoint works for `dynamic-classicann-us`
+    — **and is simpler than planned: one call per bracket returns the
+    entire region's ladder already merged across every realm** (5,002 /
+    5,006 / 5,022 entries for 2v2/3v3/5v5), no per-realm looping needed.
+    Built `api/cron/leaderboard-snapshot.ts` (wow-classic-armory): daily
+    Vercel Cron, `CRON_SECRET`-gated, writes compact per-bracket snapshots
+    to Firestore `leaderboardSnapshots/{region}-s{season}-{bracket}-{date}`
+    (~675KB/doc, well under Firestore's 1MB limit — a naive per-entry
+    object shape would have been ~2.1MB and blown the limit, so entries are
+    stored compact: rank/rating/name/realmSlug/faction/played/won/lost/tierId).
+    Deployed to prod, cron confirmed registered with Vercel
+    (`vercel crons ls`), and verified live end-to-end against
+    arenaarmory.com/api/cron/leaderboard-snapshot (200 with valid secret,
+    401 without) — today's 2026-08-08 baseline is real data sitting in
+    prod Firestore, 10 days of buffer before the Aug 18 reset. US-region
+    only, matching the rest of the app's current scope (the whole site
+    runs on a single `BLIZZARD_REGION=us` client; EU would need a second
+    region client — not built, revisit if EU becomes a real audience).
+    Snapshot shape has `season`/`bracket`/`region`/`capturedAt` at the doc
+    level (not per-realm as originally sketched, since realm comes back
+    embedded per entry in the merged ladder) — everything else in this plan
+    reads from this store. Cadence stays daily through the S2 window; from
+    Sep 1 tighten to every 2–4h per the plan below.
+  - **Found + fixed in passing (8/8): a real committed secret.**
+    `.env.example` had a live Firebase Admin private key + Blizzard client
+    secret in plaintext since the initial commit. Repo is private
+    (confirmed via `gh repo view`), so not a live leak, but a committed
+    prod credential should be treated as compromised regardless — sanitized
+    to placeholders. **Still needs Alex to rotate the Firebase service-
+    account key in the Firebase console** (console-only action, not
+    something a session can do); low urgency given the private repo, but
+    real. Also flagged separately, unrelated: a pre-existing TS narrowing
+    bug in `api/contribute.ts` (mail-result diagnostics) — doesn't block
+    deploys, spun off as its own task.
   - **P1, live by Sep 1 (S3 ladder-race traffic spike):** /leaderboards pages
     (bracket/realm/region/faction/class filters, rank-change vs prior
     snapshot, **title-cutoff cards with estimated placement ranks — the
@@ -149,7 +180,9 @@ companion (`C:\dev\arena-armory-desktop`), and the web app / API
     percentile benchmarks) requires exactly this ladder ingest — P0 doubles as
     the premium tier's data prerequisite.
   - **Alex decisions needed:** trigger the AdSense re-review (gates indexing,
-    not building); confirm Aug 14 carve-in; density-threshold sign-off.
+    not building); density-threshold sign-off; rotate the Firebase service-
+    account key (console-only, see above). ~~confirm Aug 14 carve-in~~ moot —
+    confirmed on the spot 8/8, freeze overruled for this repo.
 - **Phase 3 — remaining toward Sep 1** (Anniversary dates from
   [Blizzard](https://news.blizzard.com/en-us/article/24291476/bcc-anniversary-edition-black-temple-arrives-august-27)):
   - **Aug 18** — Arena Season 2 ends (weekly restarts); leftover AP → honor (1:10).
