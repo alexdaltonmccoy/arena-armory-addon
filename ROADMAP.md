@@ -221,21 +221,43 @@ companion (`C:\dev\arena-armory-desktop`), and the web app / API
       four pieces verified end-to-end live (not just locally): real
       avatar images confirmed loading in the Browser pane (95 rendered),
       realm list/cutoffs/Maladath-filter all confirmed via direct API
-      calls against production.
-    - **Demographics (class/spec representation) - scoped, not built.**
-      Real gap found scoping this: Blizzard's pvp-leaderboard payload has
-      NO class/spec field at all (only name/realm/faction/rating/W-L) -
-      the earlier P2 plan's "needs NO addon data" was right that no addon
-      is needed, but wrong that it's free; getting class/spec requires a
-      per-character profile crawl, one Blizzard API call per character,
-      not derivable from snapshot data already held. At today's
-      eligible-population sizes (3,647-4,474 per bracket) a full crawl is
-      thousands of calls - not a live per-page-load feature, needs its
-      own bounded (top-N, e.g. top 200-300 per bracket) periodic crawl
-      job, structurally similar to the P0 leaderboard-snapshot cron but
-      separate. Real build, not a quick add-on to today's session -
-      flagged to Alex rather than either rushing a half-built version or
-      silently dropping the ask.
+      calls against production. **Same-session follow-up (Alex's ask):
+      real WoW faction crest icons replace the plain color dots** -
+      `achievement_pvp_a_01`/`achievement_pvp_h_01`, same
+      wow.zamimg.com CDN already used everywhere else on the site.
+      Added as `FACTION_ICONS` in `lib/guideIcons.ts` (reusable, not
+      leaderboard-specific).
+    - **Demographics (class/spec representation) - SHIPPED AND LIVE
+      2026-08-08, same session (Alex chose to build now rather than
+      defer).** New daily cron (`api/cron/demographics-snapshot.ts`, runs
+      20 min after the leaderboard snapshot it reads targets from) crawls
+      the top 200 ranked characters per bracket - Blizzard's leaderboard
+      payload has no class/spec field at all, so this needed a real
+      per-character profile crawl (2 lightweight calls each: class from
+      the base profile, spec from the `specializations` sub-resource, no
+      single endpoint has both), not derivable from data already held.
+      Rendered as a bar list under the ladder table (top 3v3 today:
+      Subtlety Rogue, Discipline Priest, Frost Mage - matches known TBC
+      meta). **Real bug found load-testing before shipping:** 16-way
+      concurrency (32 simultaneous Blizzard calls) tripped their rate
+      limit hard - ~48% of every 200-character batch came back 429,
+      silently swallowed as "no data." Fixed at the root in
+      `blizzardFetch` itself (retry on 429 with exponential backoff +
+      jitter, honoring `Retry-After`), since every other caller -
+      character pages, guild pages - has carried the same risk under real
+      traffic the whole time, just never at a volume that surfaced it;
+      also dropped crawl concurrency 16→8. Success rate went from ~48% to
+      ~93-97% of the 200-per-bracket target after both fixes, verified
+      against live data before deploying. **Also hit a real Vercel
+      deploy-config bug**: a specific `"api/cron/demographics-snapshot.ts"`
+      key in `vercel.json`'s `functions` (needed for the crawl's longer
+      maxDuration) made the production build fail outright ("doesn't
+      match any Serverless Functions") despite the file being correctly
+      present and deployed - confirmed via `--force` this wasn't stale
+      build-cache, a genuine quirk with exact-path overrides alongside
+      the existing `api/**/*.ts` glob. Fixed by bumping the global
+      default maxDuration instead of a per-route override (a ceiling, not
+      a floor - harmless for every fast function that doesn't need it).
     - **Still open:** rating-chart 7d/30d/season time
       ranges + surfacing on character pages (RatingChart already exists —
       this is a selector, not a build); ladder-history layer on character
