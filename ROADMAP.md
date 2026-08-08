@@ -190,6 +190,52 @@ companion (`C:\dev\arena-armory-desktop`), and the web app / API
       pane — the pane's synthetic mouse clicks don't land in this
       environment for an unrelated reason, so verification used dispatched
       DOM events instead, same effect as a real click.
+    - **Leaderboard polish round — SHIPPED AND LIVE 2026-08-08** (same
+      session, Alex-requested follow-ups): character avatars on every row
+      (new cached avatar-only endpoint - Blizzard has no batch avatar API,
+      full character endpoint would be far more than a table row needs);
+      the general realm list (`/api/realms` - home page, header search,
+      leaderboard filter, everywhere) was quietly shipping two of
+      Blizzard's own internal QA/GM test realms ("PROGWOW US1 GMSS 1",
+      "PROGWOW US1 Web") alongside the 3 real ones - filtered out by slug
+      prefix, cache-busted immediately (`realms` -> `realms_v2`) instead
+      of waiting out the old 24h TTL; the leaderboard's realm filter now
+      merges with the full real realm list instead of deriving options
+      purely from ladder participation, so Maladath (genuinely 0 ranked
+      players today, verified against live data, not a bug) is
+      selectable rather than invisible. **Title-cutoff cards, deferred
+      earlier the same day for lack of sourcing, now shipped**: Blizzard's
+      `tier` field is still always 0 for Anniversary, so this computes an
+      estimate from the documented WoW arena title percentile system
+      instead (Merciless Gladiator 0.1% / Gladiator 0.5% / Duelist 3% /
+      Rival 10% / Challenger 35%, eligibility floored at 50 wins per
+      Blizzard's own stated seasonal-reward rule) - sourced from an
+      official Blizzard TBC Classic S1 post plus two independent guides,
+      cross-checked against this repo's own earlier Ironforge.pro
+      screenshot research, which had already independently named
+      "Merciless Gladiator" as this season's top tier. 2v2 correctly
+      shows only the two Gladiator-tier titles (Duelist/Rival/Challenger
+      are 3v3/5v5-only per the same sourcing). Labeled as an estimate in
+      the UI, not presented as a certified Blizzard number - full
+      methodology/sourcing documented in `api/_lib/pvpTitles.ts`. All
+      four pieces verified end-to-end live (not just locally): real
+      avatar images confirmed loading in the Browser pane (95 rendered),
+      realm list/cutoffs/Maladath-filter all confirmed via direct API
+      calls against production.
+    - **Demographics (class/spec representation) - scoped, not built.**
+      Real gap found scoping this: Blizzard's pvp-leaderboard payload has
+      NO class/spec field at all (only name/realm/faction/rating/W-L) -
+      the earlier P2 plan's "needs NO addon data" was right that no addon
+      is needed, but wrong that it's free; getting class/spec requires a
+      per-character profile crawl, one Blizzard API call per character,
+      not derivable from snapshot data already held. At today's
+      eligible-population sizes (3,647-4,474 per bracket) a full crawl is
+      thousands of calls - not a live per-page-load feature, needs its
+      own bounded (top-N, e.g. top 200-300 per bracket) periodic crawl
+      job, structurally similar to the P0 leaderboard-snapshot cron but
+      separate. Real build, not a quick add-on to today's session -
+      flagged to Alex rather than either rushing a half-built version or
+      silently dropping the ask.
     - **Still open:** rating-chart 7d/30d/season time
       ranges + surfacing on character pages (RatingChart already exists —
       this is a selector, not a build); ladder-history layer on character
