@@ -120,20 +120,43 @@ companion (`C:\dev\arena-armory-desktop`), and the web app / API
     real. Also flagged separately, unrelated: a pre-existing TS narrowing
     bug in `api/contribute.ts` (mail-result diagnostics) — doesn't block
     deploys, spun off as its own task.
-  - **P1, live by Sep 1 (S3 ladder-race traffic spike):** /leaderboards pages
-    (bracket/realm/region/faction/class filters, rank-change vs prior
-    snapshot, **title-cutoff cards with estimated placement ranks — the
-    daily-check habit loop, the most prominent element on Ironforge's own
-    ladder page (screenshot-verified 8/8)** — `noindex` until the AdSense
-    re-review clears, see revenue plan below); **persistent header search on
-    EVERY page of the site, players AND guilds (Alex directive 8/8 —
-    non-negotiable UX parity, not a nice-to-have;** cheap — nav is
-    `app/_layout.tsx`, `lib/recentSearches.ts` exists); rating-chart
-    7d/30d/season time ranges + surfacing on character pages (RatingChart
-    already exists — this is a selector, not a build); **ladder-history
-    layer on character pages for EVERY ladder character from snapshot diffs
-    (added 8/8** — rating chart + per-session W/L deltas, parity with
-    ironforge.pro's `/anniversary/player/` pages, which are full armory
+  - **P1, live by Sep 1 (S3 ladder-race traffic spike):**
+    - **`/leaderboards` page — SHIPPED AND LIVE 2026-08-08**
+      (wow-classic-armory, arenaarmory.com/leaderboards): bracket tabs
+      (2v2/3v3/5v5), realm + faction filters, sortable-by-rank table
+      (rank/name/realm/rating/W-L-winrate), pagination, rank-change column
+      (shows once a second day's snapshot exists — today's is the first,
+      so it correctly reads "No prior snapshot yet"). New `GET
+      /api/leaderboard` reads from the P0 snapshot store via a small
+      `leaderboardSnapshotPointers/{region}-{bracket}` pointer doc (updated
+      by the cron each run) instead of a `where`+`orderBy` Firestore query
+      — deliberately avoids needing a composite index, the exact class of
+      bug that bit the global-spend-cap query in rebbel-v2 (see
+      `C:\dev\PORTFOLIO_ROADMAP.md`'s Rebbel row, 8/6 entry). `noindex`
+      until the AdSense re-review clears, per the revenue plan below.
+      Verified end-to-end against production (not just locally): filters,
+      pagination, and character-name links all click-tested live in the
+      Browser pane against arenaarmory.com. **Title-cutoff cards
+      deliberately NOT shipped this pass** — Blizzard's `tier` field comes
+      back `0` for every single entry across all three brackets (5,000+
+      rows checked, not a sampling fluke), so TBC Anniversary cutoffs
+      aren't readable from Blizzard's API the way the plan assumed; a
+      real cutoff would have to be computed from an assumed title-
+      percentage formula (Gladiator/Duelist/Rival/Challenger thresholds
+      are well-documented for retail-era TBC but not confirmed for
+      Anniversary's population/ruleset) — shipping a made-up "cutoff"
+      number on a public PvP-destination page is worse than not having
+      the feature; needs real sourcing before it ships, not a guess under
+      time pressure.
+    - **Still open:** persistent header search on EVERY page of the site,
+      players AND guilds (Alex directive 8/8 — non-negotiable UX parity,
+      not a nice-to-have; cheap — nav is `app/_layout.tsx`,
+      `lib/recentSearches.ts` exists); rating-chart 7d/30d/season time
+      ranges + surfacing on character pages (RatingChart already exists —
+      this is a selector, not a build); ladder-history layer on character
+      pages for EVERY ladder character from snapshot diffs (added 8/8 —
+      rating chart + per-session W/L deltas, parity with
+      ironforge.pro's `/anniversary/player/` pages, which are full armory
     pages with exactly this layer; ours already ARE full armory pages, so
     this adds their one extra layer to pages we already have — no addon
     needed, synced characters additionally get the match-level layer nobody
