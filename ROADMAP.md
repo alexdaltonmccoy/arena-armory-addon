@@ -182,8 +182,8 @@ companion (`C:\dev\arena-armory-desktop`), and the web app / API
   frames, GladiatorlosSA-style voice announcer, and automatic match
   history/analytics synced to arenaarmory.com." (keeps the searched-incumbent
   names plus the arenaarmory.com site mention that ties into the account-claim
-  funnel). Still open: the feedback comment itself — quick manual dashboard
-  item, ~5 min.
+  funnel). **Feedback comment posted live 2026-08-07** on the CurseForge
+  project page — this P2 item is now fully closed.
 - **Build Arena MCP (P3, parking lot, added 2026-08-05)** — park until
   after Sep 1; revisit during Season 3.
 - **Premium tier ($3–5/mo) — scoping started 2026-08-06, paused mid-scope**
