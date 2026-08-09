@@ -9,13 +9,25 @@ companion (`C:\dev\arena-armory-desktop`), and the web app / API
 - **WoW addon v1** - enemy frames (trinkets, DRs, cooldowns, cast bars, spec
   detection), announcer, test mode, match recorder, auto-release to
   CurseForge/Wago via GitHub Actions.
-- **Voice-pack announcer (addon v1.5.0)** - GladiatorlosSA-style callouts via
-  shipped `Media/Voice/*.ogg` (90 Chirp3-HD clips at arena pace): trinket,
-  drinking, low health, resurrects, CC, major cooldowns, optional interrupts.
-  TTS is optional/off by default. Generator: `scripts/generate-voice-pack.py`.
-  Coverage is solid for arena; optional parity polish (Blade Flurry, Intervene,
-  Bestial Wrath, Mass Dispel, Purge/Dispel, Shield Bash, major racials) is
-  Later, not a Sep 1 blocker.
+- **Voice-pack announcer (addon v1.5.0, +12 more callouts in v1.8.0)** -
+  GladiatorlosSA-style callouts via shipped `Media/Voice/*.ogg` (90
+  Chirp3-HD clips at arena pace): trinket, drinking, low health, resurrects,
+  CC, major cooldowns, optional interrupts, plus (v1.8.0) mobility/utility
+  callouts that already had recorded clips but no trigger - Charge,
+  Intercept, Blink, Spellsteal, Feral Charge, Sprint, Premeditation,
+  Stealth, Stoneform, Escape Artist, Spell Reflection, Berserker Rage. TTS
+  is optional/off by default. Generator: `scripts/generate-voice-pack.py`.
+  Coverage is solid for arena; remaining parity polish (Blade Flurry,
+  Intervene, Bestial Wrath, Shield Bash, racials, Dispel Magic/Purge - not
+  "Mass Dispel," which doesn't exist in TBC, an earlier note here was
+  wrong -, Ice Barrier, Shield Wall, Divine Favor, Blessing of Sacrifice)
+  needs new TTS generation and is Later, not a Sep 1 blocker.
+- **First-run preview + minimap icon (addon v1.8.0)** - new installs
+  previously showed nothing but the bare green anchor bar until a real
+  arena match or a self-discovered `/aa test`; first non-arena login now
+  runs a one-time sample-data preview instead. Minimap launcher icon
+  (vendored LibDataBroker-1.1 + LibDBIcon-1.0, neither existed in this repo
+  before) - left-click options, right-click stats panel.
 - **Desktop app** - SavedVariables auto-discovery and watching, parse +
   dedupe + upload, self-provisioned tokens, addon-disabled diagnostics,
   system tray background sync, launch at startup, per-character armory links.
@@ -566,6 +578,55 @@ companion (`C:\dev\arena-armory-desktop`), and the web app / API
 
 ## Shipped recently
 
+- **Session close-out, 2026-08-09: leaderboard page UX fixes, character page
+  layout fixes, and addon v1.8.0 (onboarding preview + minimap icon + 12 new
+  voice alerts).** (wow-classic-armory) Fixed four reported leaderboard-page
+  issues: a loading skeleton for the title-cutoffs section (was popping in
+  with a layout jump once data arrived), the class/spec demographics section
+  got a bar-chart view back behind a tab (chips-only was an earlier call —
+  a bracket can have 20+ specs, chips avoid pushing the section too far down
+  — both views now coexist), mobile ladder rows no longer overlap (stacked
+  two-line layout under ~700px via the existing `useIsNarrowScreen` hook),
+  and a new player-rank search (jumps straight to the matching bracket/page,
+  highlights the row) plus a class filter scoped to the top-200 demographics
+  crawl (full-ladder class filtering was ruled out as too expensive — see
+  `api/_lib/demographics.ts`'s own cost comment — top-200 reuses the
+  existing daily crawl at zero extra Blizzard API cost, extended to retain
+  per-character rank/rating alongside class). Two bugs found and fixed along
+  the way: the search-results dropdown was rendering but unclickable (a
+  later sibling filter control painted over it — z-index scoped to the
+  wrong ancestor), and a `PAGE_SIZE` constant was declared but never passed
+  to the query, so pagination silently used the server's default. Also two
+  follow-up polish passes from Alex's live feedback on the character page:
+  Ladder History moved below the CR bracket cards (was above them, ahead of
+  the stats users look for first), then converted from an always-open,
+  full-weight showcase panel (pushing the match list down a full section)
+  to a collapsed-by-default one-line summary — current rank/rating per
+  bracket, expands on click; and the header's stat pills (Equipped/Average
+  iLvl, Last Online) moved into the same row as the avatar/name instead of
+  a separate row below, filling a large empty gap on wide screens and
+  cutting a full row of scroll height. (wow-gladius) Addon **v1.8.0**: a
+  first-run sample-data preview (reuses the existing `/aa test` machinery,
+  gated on a genuinely-fresh-install check so existing users updating don't
+  get surprised by it) so new installs show the real enemy-frame UI
+  immediately instead of just the bare green anchor bar until someone
+  self-discovers `/aa test`; a minimap icon (vendored `LibDataBroker-1.1`
+  from its original author's repo + `LibDBIcon-1.0` from the official
+  WowAce SVN mirror — this repo had neither before) with left-click for
+  options, right-click for the stats panel, togglable in settings; and 12
+  new announcer callouts wired up (Charge, Intercept, Blink, Spellsteal,
+  Feral Charge, Sprint, Premeditation, Stealth, Stoneform, Escape Artist,
+  Spell Reflection, Berserker Rage) — all already had recorded voice clips
+  sitting unused with no spell-ID trigger, spell IDs verified against
+  tbc.wowhead.com and cross-checked against this file's own
+  `AA.COOLDOWN_SPELLS` table where they overlapped. Released clean via the
+  CurseForge/Wago GitHub Actions pipeline (CHANGELOG.md gate passed).
+  **Tier 2 scoped but not built**: Blade Flurry, Intervene, Bestial Wrath,
+  Shield Bash, racials (Arcane Torrent/Blood Fury/Berserking), Dispel
+  Magic/Purge (correcting an earlier "Mass Dispel" roadmap note — that spell
+  doesn't exist in TBC), Ice Barrier, Shield Wall, Divine Favor, Blessing of
+  Sacrifice — needs phrase decisions + a new TTS generation pass before
+  it's wireable the same zero-cost way Tier 1 was.
 - **iOS crash-on-launch bug found and fixed while build 9 sat in Apple
   review (2026-08-07)** (wow-classic-armory) - Alex reported a blocking
   native `Alert` dialog covering the home screen on real-device TestFlight
