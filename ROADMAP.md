@@ -313,23 +313,33 @@ companion (`C:\dev\arena-armory-desktop`), and the web app / API
       in both the pointer cron and this ladder-history walk-back will
       need revisiting for intra-day granularity at that point, flagged
       in `api/_lib/ladderHistory.ts`).
-  - **P2, early S3:** snapshot homepage redesign (search + ladder top-5 +
-    biggest movers above the fold); **recent-movement activity feed (added
-    8/8** — per-character W/L + rating change since last snapshot, "who's
-    queuing right now," mirrors Ironforge's `/activity/` page; cheap off the
-    intra-day snapshot diffs, folds into the homepage movers module or a
-    leaderboard tab); /seasons/tbc-s2 archive page + auto-freeze future
-    seasons (stable URLs, indexable post-re-review); spec representation at
-    rating tiers (ladder + top-N character crawls — needs NO addon data;
-    their `/charts/` does class-distribution-by-title, ours adds SPEC-level
-    + cutoff-history parity comes free from snapshots); participation stats
-    (active rated players per realm/bracket/week — falls out of snapshot
-    diffs. **Reframed 8/8 (screenshot-corrected): parity-plus, not
-    uncontested** — their census already blends ladder characters in, and
-    their charts page estimates games/day from W/L diffs ("Estimated tracked
-    games," their own label). Ours differentiates on what estimates can't
-    do: actual recorded games incl. unrated, real match durations, realm
-    cuts — "measured, not estimated").
+  - **P2, early S3:**
+    - **Homepage ladder top-5 + latest-news teaser — SHIPPED AND LIVE
+      2026-08-08.** "Search front and center, ladder top-5 per bracket,
+      latest news... converts lookup tool -> daily destination" — the
+      one P2 piece with real data to show today. New
+      `HomepageLadderPreview` (bracket-tabbed, reuses the same
+      leaderboard query + `CharacterAvatar` as `/leaderboards`) sits
+      between the search panel and recent searches; a news teaser pulls
+      the top `ARTICLES` entry (exported from `app/news/index.tsx`).
+      Live-verified: bracket tab switching shows real, correct data (2v2
+      top-5 differs from 3v3's, matches known ladder standings), 6
+      avatars loaded and rendered. **Deliberately NOT built: the
+      "biggest movers" module** — needs day-over-day rank deltas, and
+      only one real snapshot exists so far (P0 started 8/8, next cron
+      run is the first real diff) — nothing to show until tomorrow, so
+      it's left out rather than shipped as a fake-empty state.
+    - **Still blocked on time, not effort** (checked same session before
+      starting P2 — worth re-checking next session rather than assuming
+      still blocked): **recent-movement activity feed** ("who's queuing
+      right now," mirrors Ironforge's `/activity/` page) needs the same
+      day-over-day deltas as the movers module above — buildable the
+      moment a second real snapshot exists. **Participation stats**
+      (active rated players per realm/bracket/week) similarly needs
+      real week-over-week trend data that doesn't exist yet at 1-2 days
+      in. **`/seasons/tbc-s2` archive page + auto-freeze future
+      seasons** needs the season to have actually ended (Aug 18) —
+      building the page now would have nothing real to freeze.
   - **P3, gated on data density:** comp winrate/duration meta dashboard (the
     true differentiator, addon-data-powered) — precomputed aggregates, n≥50
     per displayed cut, sample sizes labeled. 8/7 reality: 303 addon installs,
