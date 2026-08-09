@@ -373,6 +373,42 @@ companion (`C:\dev\arena-armory-desktop`), and the web app / API
     a normal browser UA against the same URL still gets the unmodified
     static SPA (confirmed the pre-existing rewrite still fires
     unaffected).
+  - **Character/guild/profile page meta tags — SHIPPED AND LIVE 2026-08-08/09.**
+    Audited the site for SEO after the P0-P2 parity push: character, guild,
+    and profile pages (all `output: "static"`, all client-fetched) had zero
+    real `<title>`/OG tags — every one shipped the site-wide generic
+    fallback, meaning every shared character/guild/profile link unfurled
+    identically and none of them differentiated in search results. Added
+    real per-entity title/description/OG/canonical tags to all three.
+    **Multi-attempt debugging saga, real root cause found via evidence, not
+    guessing:** the first fix (wiring these pages to the existing
+    `PageMeta`/`expo-router/head` `<Head>` component already used
+    site-wide) immediately threw an uncaught React error #418 on every
+    character/guild/profile load — 5 increasingly structural attempts
+    across the `Head`/portal-mounting pattern (content-matching, static
+    loading branches, single-call-site restructuring, key-based forced
+    remount) all failed to fix it. Swapped all three pages off `Head`
+    entirely onto a new `lib/useWebMeta.ts` (imperative `document.head`
+    updates via `useFocusEffect`, the same pattern `useWebDocumentTitle`
+    already used reliably for `<title>`) — meta tags started resolving
+    correctly to real per-entity content, but the #418 error **persisted
+    on the character page only**, proving `Head` was never actually the
+    cause. Root-caused for real by diffing `curl`-fetched static HTML
+    against the live DOM: the character page's loading-state label
+    interpolated the route param (`` `Looking up ${characterName}...` ``) —
+    `expo export`'s static prerender has no real params, so the build-time
+    HTML bakes in the literal unresolved `"Looking up [name]..."`, while
+    the client's very first hydration render already has the real name,
+    mismatching text content on first paint. Guild/profile never hit this
+    since their loading labels were already static strings. Fixed by
+    de-interpolating the label. Verified clean (zero console errors, real
+    resolved title/og:title/og:description/canonical) across repeated
+    fresh-tab loads of character and guild pages in production; profile
+    confirmed by code inspection (identical static-label pattern, already
+    proven clean on guild) since no real public profile slug was on hand
+    to browser-test live. Sitemap/robots.txt already auto-regenerate every
+    build and correctly exclude noindex pages (`/leaderboards`) and
+    disallow `/matches`, `/api/` — no changes needed there.
   - **Data-source map (explicit, 8/8):** Ironforge runs on TWO pipelines —
     **warcraftlogs.com raid-upload data is the backbone of their anchor**
     (population/census/demographics, the citation moat; Anniversary blends
