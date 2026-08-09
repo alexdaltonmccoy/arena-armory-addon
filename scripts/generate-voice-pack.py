@@ -114,6 +114,21 @@ CLIPS = {
     "warstomp": "War Stomp",
     "stoneform": "Stoneform",
     "escapeartist": "Escape Artist",
+    # Tier 2 (2026-08-09): GSA parity polish, spell IDs verified against
+    # tbc.wowhead.com's class ability lists (see ArenaArmory/Data/Spells.lua).
+    "bladeflurry": "Blade Flurry",
+    "intervene": "Intervene",
+    "bestialwrath": "Bestial Wrath",
+    "shieldbash": "Shield Bash",
+    "arcanetorrent": "Arcane Torrent",
+    "bloodfury": "Blood Fury",
+    "berserking": "Berserking",
+    "dispelmagic": "Dispel Magic",
+    "purge": "Purge",
+    "icebarrier": "Ice Barrier",
+    "shieldwall": "Shield Wall",
+    "divinefavor": "Divine Favor",
+    "blessingofsacrifice": "Blessing of Sacrifice",
 }
 
 

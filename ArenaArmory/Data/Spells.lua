@@ -343,6 +343,19 @@ AA.VOICE_TEXT = {
     warstomp = "War Stomp",
     stoneform = "Stoneform",
     escapeartist = "Escape Artist",
+    bladeflurry = "Blade Flurry",
+    intervene = "Intervene",
+    bestialwrath = "Bestial Wrath",
+    shieldbash = "Shield Bash",
+    arcanetorrent = "Arcane Torrent",
+    bloodfury = "Blood Fury",
+    berserking = "Berserking",
+    dispelmagic = "Dispel Magic",
+    purge = "Purge",
+    icebarrier = "Ice Barrier",
+    shieldwall = "Shield Wall",
+    divinefavor = "Divine Favor",
+    blessingofsacrifice = "Blessing of Sacrifice",
 }
 
 local function A(sound, cat)
@@ -464,6 +477,34 @@ AA.ANNOUNCE_SPELLS = {
     [1786] = A("stealth", "cooldown"), [1787] = A("stealth", "cooldown"), -- Rogue Stealth (all 4 ranks)
     [20594] = A("stoneform", "cooldown"), -- Dwarf racial: Stoneform
     [20589] = A("escapeartist", "cooldown"), -- Gnome racial: Escape Artist
+
+    -- Tier 2 (2026-08-09): GSA parity polish. Spell IDs verified against
+    -- tbc.wowhead.com's class ability lists (not just individual spell
+    -- pages - Shield Bash in particular looked single-rank on its own page
+    -- but is actually 4 ranks per the Warrior ability list). Several IDs
+    -- below (Blade Flurry, Bestial Wrath, Divine Favor, all 6 Ice Barrier
+    -- ranks) independently cross-checked against AA.SPEC_SPELLS above,
+    -- which already tracks the same IDs for spec detection.
+    [13877] = A("bladeflurry", "cooldown"), -- Rogue Blade Flurry
+    [3411] = A("intervene", "cooldown"), -- Warrior Intervene
+    [19574] = A("bestialwrath", "cooldown"), -- Hunter Bestial Wrath (the cast; 34692 "Beast Within" buff already tracked)
+    [72] = A("shieldbash", "interrupt"), [1671] = A("shieldbash", "interrupt"),
+    [1672] = A("shieldbash", "interrupt"), [29704] = A("shieldbash", "interrupt"), -- Warrior Shield Bash (all 4 ranks)
+    [28730] = A("arcanetorrent", "cooldown"), -- Blood Elf racial: Arcane Torrent (Paladin/Hunter/Priest/Mage/Warlock)
+    [25046] = A("arcanetorrent", "cooldown"), -- Blood Elf racial: Arcane Torrent (Rogue)
+    [20572] = A("bloodfury", "cooldown"), -- Orc racial: Blood Fury (Warrior/Hunter/Rogue)
+    [33697] = A("bloodfury", "cooldown"), -- Orc racial: Blood Fury (Shaman)
+    [33702] = A("bloodfury", "cooldown"), -- Orc racial: Blood Fury (Warlock)
+    [20554] = A("berserking", "cooldown"), -- Troll racial: Berserking
+    [527] = A("dispelmagic", "cooldown"), [988] = A("dispelmagic", "cooldown"), -- Priest Dispel Magic (both ranks)
+    [370] = A("purge", "cooldown"), [8012] = A("purge", "cooldown"), -- Shaman Purge (both ranks)
+    [11426] = A("icebarrier", "cooldown"), [13031] = A("icebarrier", "cooldown"),
+    [13032] = A("icebarrier", "cooldown"), [13033] = A("icebarrier", "cooldown"),
+    [27134] = A("icebarrier", "cooldown"), [33405] = A("icebarrier", "cooldown"), -- Mage Ice Barrier (all 6 ranks)
+    [871] = A("shieldwall", "cooldown"), -- Warrior Shield Wall
+    [20216] = A("divinefavor", "cooldown"), -- Paladin Divine Favor
+    [6940] = A("blessingofsacrifice", "cooldown"), [20729] = A("blessingofsacrifice", "cooldown"),
+    [27147] = A("blessingofsacrifice", "cooldown"), [27148] = A("blessingofsacrifice", "cooldown"), -- Paladin Blessing of Sacrifice (all 4 ranks)
 }
 
 -- Party-chat whitelist when chatCallout=party. Keep this tiny — voice/raid
