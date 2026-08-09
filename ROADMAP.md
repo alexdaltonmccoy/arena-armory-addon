@@ -287,16 +287,32 @@ companion (`C:\dev\arena-armory-desktop`), and the web app / API
       in-browser since real synced match-history data is still sparse
       (effectively one uploading account today, per the 8/7 KPI
       baseline) - noted honestly rather than claimed as browser-verified.
-    - **Still open:** ladder history layer on character
-      pages for EVERY ladder character from snapshot diffs (added 8/8 —
-      rating chart + per-session W/L deltas, parity with
-      ironforge.pro's `/anniversary/player/` pages, which are full armory
-    pages with exactly this layer; ours already ARE full armory pages, so
-    this adds their one extra layer to pages we already have — no addon
-    needed, synced characters additionally get the match-level layer nobody
-    else has). Snapshot cadence: daily is fine for the S2 archive window;
-    **from Sep 1 run every 2–4h** (Ironforge updates multiple times/day —
-    intra-day diffs also power movers/activity feeds).
+    - **Ladder history layer on character pages — SHIPPED AND LIVE
+      2026-08-08, closing out P1.** For EVERY ranked character, not just
+      ones with Arena Armory addon match history: a rating chart
+      (reuses `RatingChart`, gets its 7d/30d/season selector for free)
+      + a per-session (since-last-snapshot) W/L log, parity with
+      ironforge.pro's `/anniversary/player/` pages, which chart at this
+      same ladder-snapshot granularity — ours already are full armory
+      pages, so this adds their one extra layer to pages we already
+      have; synced characters additionally keep the match-level layer
+      nobody else has. New `GET /api/character/[realm]/[name]/ladder-
+      history` walks back up to 30 days of snapshot doc IDs (same
+      no-query doc-id-guessing approach as the pointer scheme, no
+      composite index needed), diffs consecutive days per bracket.
+      Live-verified against Petehegseth (rank #1 3v3): correctly shows
+      up in both his 3v3 and 5v5 ladder history, "first tracked
+      snapshot" shown honestly since only one real day of data exists
+      yet (P0 started 8/8) — deltas populate starting tomorrow.
+      **This closes every item in the original 8/8 Ironforge parity
+      plan's P1 phase** (leaderboard pages, header search, rating-chart
+      ranges, ladder-history layer) — all shipped same-day. Snapshot
+      cadence: daily is fine for the S2 archive window; **from Sep 1 run
+      every 2–4h** (Ironforge updates multiple times/day — intra-day
+      diffs also power movers/activity feeds; the doc-id-guessing scheme
+      in both the pointer cron and this ladder-history walk-back will
+      need revisiting for intra-day granularity at that point, flagged
+      in `api/_lib/ladderHistory.ts`).
   - **P2, early S3:** snapshot homepage redesign (search + ladder top-5 +
     biggest movers above the fold); **recent-movement activity feed (added
     8/8** — per-character W/L + rating change since last snapshot, "who's
