@@ -1,5 +1,11 @@
 # Changelog
 
+## v1.9.0 (2026-08-09)
+- New: 13 more announcer callouts — Blade Flurry, Intervene, Bestial Wrath,
+  Shield Bash (interrupt callouts, off by default like Kick/Pummel), Arcane
+  Torrent, Blood Fury, Berserking, Dispel Magic, Purge, Ice Barrier, Shield
+  Wall, Divine Favor, and Blessing of Sacrifice.
+
 ## v1.8.0 (2026-08-09)
 - New: on first install, a brief one-time preview shows your enemy frames
   with sample data so you can see what the addon actually looks like
