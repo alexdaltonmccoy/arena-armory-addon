@@ -578,6 +578,30 @@ companion (`C:\dev\arena-armory-desktop`), and the web app / API
 
 ## Shipped recently
 
+- **Session close-out, 2026-08-09 (later): character header polish + a real
+  account-growth feature (Upgrades sign-in gate, Discord field, character-
+  page connect row).** (wow-classic-armory) Three follow-ups on Alex's live
+  feedback, same character page as the session above: (1) the ALLIANCE/
+  HORDE badge was a full-width ribbon eating a whole row above the header -
+  now a small faction icon inline with the character name (reuses
+  `FACTION_ICONS`, already used on leaderboard rows); (2) scoped a "give
+  people a reason to sign in" ask through several rounds - rejected
+  Favorites (redundant with existing Recent Searches + the claimed-character
+  list) and private scouting notes (net-new, deferred), landed on gating
+  the Upgrades tab (BiS comparison, buy-next list, gear/enchant/gem status)
+  behind Battle.net sign-in - it was fully public with zero auth check
+  before, the first real reason for a random visitor (not just a character
+  owner) to sign in; explicitly a UX nudge, not a data-security boundary,
+  since the same equipment is still visible on the Character tab regardless;
+  (3) found a real gap while scoping a follow-up "About" section idea - the
+  "Claimed · battletag" badge never linked anywhere. Fixed, plus added a new
+  Discord field (mirrors the existing Twitch/YouTube normalize-and-store
+  pattern) and a compact Twitch/YouTube/Discord "connect" row directly on
+  the character page, so a visitor looking up an opponent/teammate sees it
+  without a click-through - gated on the owner's whole profile being public
+  (`profilePublic === true`), same privacy default as everything else in the
+  claim system. All live-verified against real production data (an actual
+  claimed, public-profile account), typecheck clean.
 - **Session close-out, 2026-08-09: leaderboard page UX fixes, character page
   layout fixes, and addon v1.8.0 (onboarding preview + minimap icon + 12 new
   voice alerts).** (wow-classic-armory) Fixed four reported leaderboard-page
