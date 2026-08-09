@@ -9,19 +9,24 @@ companion (`C:\dev\arena-armory-desktop`), and the web app / API
 - **WoW addon v1** - enemy frames (trinkets, DRs, cooldowns, cast bars, spec
   detection), announcer, test mode, match recorder, auto-release to
   CurseForge/Wago via GitHub Actions.
-- **Voice-pack announcer (addon v1.5.0, +12 more callouts in v1.8.0)** -
-  GladiatorlosSA-style callouts via shipped `Media/Voice/*.ogg` (90
-  Chirp3-HD clips at arena pace): trinket, drinking, low health, resurrects,
-  CC, major cooldowns, optional interrupts, plus (v1.8.0) mobility/utility
-  callouts that already had recorded clips but no trigger - Charge,
-  Intercept, Blink, Spellsteal, Feral Charge, Sprint, Premeditation,
-  Stealth, Stoneform, Escape Artist, Spell Reflection, Berserker Rage. TTS
-  is optional/off by default. Generator: `scripts/generate-voice-pack.py`.
-  Coverage is solid for arena; remaining parity polish (Blade Flurry,
-  Intervene, Bestial Wrath, Shield Bash, racials, Dispel Magic/Purge - not
-  "Mass Dispel," which doesn't exist in TBC, an earlier note here was
-  wrong -, Ice Barrier, Shield Wall, Divine Favor, Blessing of Sacrifice)
-  needs new TTS generation and is Later, not a Sep 1 blocker.
+- **Voice-pack announcer (addon v1.5.0, +12 callouts in v1.8.0, +13 more in
+  v1.9.0 - GSA parity now fully closed)** - GladiatorlosSA-style callouts
+  via shipped `Media/Voice/*.ogg` (103 Chirp3-HD clips at arena pace):
+  trinket, drinking, low health, resurrects, CC, major cooldowns, optional
+  interrupts, mobility/utility (v1.8.0 - Charge, Intercept, Blink,
+  Spellsteal, Feral Charge, Sprint, Premeditation, Stealth, Stoneform,
+  Escape Artist, Spell Reflection, Berserker Rage), and (v1.9.0) the last
+  parity gap - Blade Flurry, Intervene, Bestial Wrath, Shield Bash
+  (interrupt category, off by default), Arcane Torrent, Blood Fury,
+  Berserking, Dispel Magic, Purge, Ice Barrier, Shield Wall, Divine Favor,
+  Blessing of Sacrifice. Spell IDs verified against tbc.wowhead.com's class
+  ability lists (not just individual spell pages - Shield Bash looked
+  single-rank on its own page but is actually 4 ranks per the Warrior
+  ability list), several cross-checked against this file's own
+  `AA.SPEC_SPELLS` table. TTS is optional/off by default. Generator:
+  `scripts/generate-voice-pack.py` (same `en-US-Chirp3-HD-Aoede` voice +
+  1.35x rate as every existing clip, for consistency). Released clean via
+  the CurseForge/Wago GitHub Actions pipeline.
 - **First-run preview + minimap icon (addon v1.8.0)** - new installs
   previously showed nothing but the bare green anchor bar until a real
   arena match or a self-discovered `/aa test`; first non-arena login now
@@ -578,6 +583,26 @@ companion (`C:\dev\arena-armory-desktop`), and the web app / API
 
 ## Shipped recently
 
+- **Addon v1.9.0, 2026-08-09 (later still): Tier 2 announcer callouts -
+  the GSA parity gap fully closed.** 13 new voice clips (Blade Flurry,
+  Intervene, Bestial Wrath, Shield Bash, Arcane Torrent, Blood Fury,
+  Berserking, Dispel Magic, Purge, Ice Barrier, Shield Wall, Divine Favor,
+  Blessing of Sacrifice) - unlike Tier 1's already-recorded-but-unwired
+  clips, these needed real generation: `scripts/generate-voice-pack.py`
+  against Google Cloud TTS, same `en-US-Chirp3-HD-Aoede` voice + 1.35x rate
+  as all 90 existing clips for consistency. Hit a real cross-project auth
+  snag first - the local machine's ADC quota project had drifted to
+  `rebbel-v2-prod` (a different product's GCP project, left over from
+  another session's `gcloud` login) instead of this product's actual
+  `wow-classic-armory-production`; fixed with `gcloud auth
+  application-default set-quota-project`, which only repoints ADC's quota
+  project and leaves the gcloud CLI's own separate default project
+  untouched. Spell IDs verified against tbc.wowhead.com's class ability
+  lists rather than individual spell pages (Shield Bash looked single-rank
+  on its own page but is actually 4 ranks per the Warrior list), and
+  several cross-checked clean against this file's own `AA.SPEC_SPELLS`
+  table. Now 103 total clips, zero gaps between wired alerts and recorded
+  audio (re-audited). Released clean via the CurseForge/Wago pipeline.
 - **Session close-out, 2026-08-09 (later): character header polish + a real
   account-growth feature (Upgrades sign-in gate, Discord field, character-
   page connect row).** (wow-classic-armory) Three follow-ups on Alex's live
@@ -1107,10 +1132,6 @@ just no longer sequenced first.
   hit/expertise/etc. cap tables per class/spec/phase (only prose in guide
   content currently). Multi-day scope - revisit if the lightweight hint
   proves insufficient in practice.
-- **Announcer GSA parity polish** - extra voice clips + spell maps for Blade
-  Flurry, Intervene, Bestial Wrath, Mass Dispel, Purge / Dispel Magic, Shield
-  Bash, and high-signal racials (Arcane Torrent, Blood Fury, Berserking). Not
-  needed for Season 3 launch.
 - **Blog / news (SEO)** - lightweight `/blog` (or `/news`) for patch notes,
   Season 3 prep, gearing explainers, and internal links into guides/comps/
   character pages. Keep it simple (MD/JSON posts or CMS-lite). **Status
