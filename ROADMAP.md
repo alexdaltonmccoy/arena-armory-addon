@@ -340,13 +340,33 @@ companion (`C:\dev\arena-armory-desktop`), and the web app / API
       in. **`/seasons/tbc-s2` archive page + auto-freeze future
       seasons** needs the season to have actually ended (Aug 18) —
       building the page now would have nothing real to freeze.
-  - **P3, gated on data density:** comp winrate/duration meta dashboard (the
-    true differentiator, addon-data-powered) — precomputed aggregates, n≥50
-    per displayed cut, sample sizes labeled. 8/7 reality: 303 addon installs,
-    ~1 real uploading account — shipping this ungated today would read as one
-    account's match history and hurt credibility. Also P3: per-match OG/share
-    cards (match pages already exist and are public; this is unfurl polish +
-    addon acquisition loop).
+  - **P3:** comp winrate/duration meta dashboard (the true differentiator,
+    addon-data-powered) — **gated on data density**, precomputed aggregates,
+    n≥50 per displayed cut, sample sizes labeled. 8/7 reality: 303 addon
+    installs, ~1 real uploading account — shipping this ungated today would
+    read as one account's match history and hurt credibility.
+    **Per-match OG/share cards — SHIPPED AND LIVE 2026-08-08 (not gated,
+    built same session).** Match pages exist and are public but had zero
+    per-page meta tags - the app is `output: "static"` (no per-request
+    SSR), so a static-exported `/matches/[guid]` page can't know which
+    match it is at build time, and the page's own data fetch is entirely
+    client-side (needs an uploader token or character context a
+    link-preview bot never has). New `api/matches/og/[guid].ts` is a
+    crawler-only HTML shim: looks up the match by guid alone (single-field
+    Firestore query - docs are keyed `uid_guid`, not `guid`, so this isn't
+    a plain doc get), respects the same per-character privacy flag the
+    rest of the matches API honors, returns real `<meta og:*>` tags
+    (result, bracket, map, both comps, duration). A new `vercel.json`
+    rewrite routes ONLY known social-crawler User-Agents (Discordbot,
+    Slackbot, Twitterbot, facebookexternalhit, etc.) here; everyone else
+    still gets the normal static SPA page, unaffected. **Live-verified
+    both paths against the real deployed site**: a spoofed Discordbot UA
+    against a real match (200 real synced matches on one dogfood
+    character) returns correct dynamic content ("WIN · 2v2 on Blade's Edge
+    Arena — Sillyhots (Nightslayer)", "DRUID/WARRIOR vs WARRIOR/PALADIN");
+    a normal browser UA against the same URL still gets the unmodified
+    static SPA (confirmed the pre-existing rewrite still fires
+    unaffected).
   - **Data-source map (explicit, 8/8):** Ironforge runs on TWO pipelines —
     **warcraftlogs.com raid-upload data is the backbone of their anchor**
     (population/census/demographics, the citation moat; Anniversary blends
