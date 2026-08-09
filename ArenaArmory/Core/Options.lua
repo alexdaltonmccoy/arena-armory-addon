@@ -45,6 +45,13 @@ local options = {
             name = "Lock frames",
             desc = "Lock the anchor so it can't be dragged.",
         },
+        minimap = {
+            type = "toggle", order = 2,
+            name = "Show minimap icon",
+            desc = "Adds a minimap button for quick access to options (left-click) and the stats panel (right-click).",
+            get = function() return not AA.db.profile.minimap.hide end,
+            set = function(_, value) AA.Minimap:SetShown(value) end,
+        },
         frames = {
             type = "group", order = 10, name = "Frames", inline = false,
             args = {
@@ -392,6 +399,10 @@ addon:RegisterChatCommand("aa", function(input)
         AA.db.profile.locked = not AA.db.profile.locked
         AA.Frames:UpdateLockState()
         addon:Print(AA.db.profile.locked and "Frames locked." or "Frames unlocked - drag the green anchor.")
+    elseif command == "minimap" then
+        local shouldShow = AA.db.profile.minimap.hide -- toggle: was hidden -> show, was shown -> hide
+        AA.Minimap:SetShown(shouldShow)
+        addon:Print(shouldShow and "Minimap icon shown." or "Minimap icon hidden.")
     elseif command == "matches" then
         addon:Print(("Matches stored: %d"):format(AA.Recorder:GetMatchCount()))
     elseif command == "currency" then

@@ -13,6 +13,13 @@ local addon = AceAddon:NewAddon("ArenaArmory", "AceEvent-3.0", "AceTimer-3.0", "
 AA.addon = addon
 _G.ArenaArmory = AA
 
+-- Snapshot BEFORE AceDB:New() (in OnInitialize, below) creates this table -
+-- lets OnEnteringWorld tell a genuinely brand-new install apart from an
+-- existing user updating to a version that added the first-run preview.
+-- Every session writes this table to disk at logout, so any returning user
+-- already has it going into OnInitialize; only a true first-ever load sees nil.
+AA.isFreshInstall = (_G.ArenaArmoryDB == nil)
+
 AA.inArena = false
 AA.testMode = false
 AA.guidToUnit = {}   -- enemy GUID -> "arenaN"
@@ -128,6 +135,27 @@ function addon:OnEnteringWorld(_, _, isReloadingUi)
         wipe(AA.guidToUnit)
         wipe(AA.unitClass)
     end
+
+    if not nowInArena and AA.isFreshInstall and not AA.db.global.hasSeenFirstRun then
+        AA.db.global.hasSeenFirstRun = true
+        self:ScheduleTimer("ShowFirstRunPreview", 2)
+    end
+end
+
+-- New installs otherwise show nothing but the bare green anchor bar until
+-- either a real arena match or a self-discovered /aa test - a bad first
+-- impression. Briefly runs the same sample-data preview as /aa test so new
+-- users see the real UI without having to find the slash command themselves.
+function addon:ShowFirstRunPreview()
+    if AA.inArena or InCombatLockdown() then return end
+    self:Print("Welcome to Arena Armory! Here's a one-time preview of your enemy frames with sample data (not a real match) so you can see what it looks like.")
+    AA.TestMode:Enable_()
+    self:ScheduleTimer(function()
+        if AA.testMode then
+            AA.TestMode:Disable_()
+            self:Print("That was just a preview. Type /aa test to bring it back anytime, /aa for settings, or /aa lock to lock the frames in place once you like the layout.")
+        end
+    end, 12)
 end
 
 function addon:OnArenaOpponentUpdate(_, unit, reason)

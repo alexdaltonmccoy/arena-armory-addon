@@ -101,6 +101,12 @@ AA.defaults = {
             enabled = true,
         },
 
+        -- minimapPos is left unset; LibDBIcon fills it in (falls back to a
+        -- sane default angle) the first time it positions the button.
+        minimap = {
+            hide = false,
+        },
+
         analytics = {
             enabled = true,
             announceComp = true, -- "You are 2-1 vs Rogue/Priest" on arena entry

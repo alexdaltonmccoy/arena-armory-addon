@@ -419,7 +419,11 @@ AA.ANNOUNCE_SPELLS = {
     [16190] = A("manatide", "cooldown"), -- Mana Tide Totem
     [16166] = A("elementalmastery", "cooldown"),
     [30823] = A("shamanisticrage", "cooldown"),
-    -- Spell Reflection / Berserker Rage intentionally omitted (too noisy for callouts).
+    -- Spell Reflection / Berserker Rage: previously omitted as too noisy;
+    -- re-enabled per Alex. IDs match AA.COOLDOWN_SPELLS above (single rank
+    -- each in TBC, already live there for the icon tracker).
+    [23920] = A("spellreflection", "cooldown"), -- Warrior Spell Reflection
+    [18499] = A("berserkerrage", "cooldown"), -- Warrior Berserker Rage
     [14177] = A("coldblood", "cooldown"),
     [13750] = A("adrenalinerush", "cooldown"),
     [14185] = A("preparation", "cooldown"),
@@ -443,6 +447,23 @@ AA.ANNOUNCE_SPELLS = {
     [20707] = A("soulstone", "cooldown"), -- Soulstone Resurrection
     -- Racials (CC break)
     [7744] = A("wotf", "cooldown"), -- Will of the Forsaken
+
+    -- Mobility / utility (Tier 1: voice clips already recorded, previously
+    -- unwired - see Media/Voice/*.ogg). Spell IDs verified against
+    -- tbc.wowhead.com and cross-checked against AA.COOLDOWN_SPELLS above,
+    -- which already independently tracks Intercept/Sprint/Blink/Feral
+    -- Charge for the icon tracker under the same IDs.
+    [100] = A("charge", "cooldown"), -- Warrior Charge (single rank in TBC)
+    [20252] = A("intercept", "cooldown"), -- Warrior Intercept (single rank in TBC)
+    [1953] = A("blink", "cooldown"), -- Mage Blink
+    [30449] = A("spellsteal", "cooldown"), -- Mage Spellsteal
+    [16979] = A("feralcharge", "cooldown"), -- Druid Feral Charge (Bear - the only version in TBC)
+    [2983] = A("sprint", "cooldown"), [8696] = A("sprint", "cooldown"), [11305] = A("sprint", "cooldown"), -- Rogue Sprint (all 3 ranks)
+    [14183] = A("premeditation", "cooldown"), -- Rogue Premeditation
+    [1784] = A("stealth", "cooldown"), [1785] = A("stealth", "cooldown"),
+    [1786] = A("stealth", "cooldown"), [1787] = A("stealth", "cooldown"), -- Rogue Stealth (all 4 ranks)
+    [20594] = A("stoneform", "cooldown"), -- Dwarf racial: Stoneform
+    [20589] = A("escapeartist", "cooldown"), -- Gnome racial: Escape Artist
 }
 
 -- Party-chat whitelist when chatCallout=party. Keep this tiny — voice/raid

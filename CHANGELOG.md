@@ -1,5 +1,16 @@
 # Changelog
 
+## v1.8.0 (2026-08-09)
+- New: on first install, a brief one-time preview shows your enemy frames
+  with sample data so you can see what the addon actually looks like
+  before your first arena match. Previously the only thing visible on
+  first login was the drag anchor bar until you found /aa test yourself.
+- New: minimap icon. Left-click for options, right-click for the stats
+  panel. Can be turned off in options if you'd rather not have it.
+- New: 12 more announcer callouts — Charge, Intercept, Blink, Spellsteal,
+  Feral Charge, Sprint, Premeditation, Stealth, Stoneform, Escape Artist,
+  Spell Reflection, and Berserker Rage.
+
 ## v1.7.8 (2026-08-05)
 - Fixed a teammate or opponent sometimes permanently showing as an unnamed
   "Unknown" entry in match history instead of their real name/class,

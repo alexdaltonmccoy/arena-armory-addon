@@ -29,4 +29,5 @@ Modules\Recorder.lua
 Modules\Currency.lua
 Modules\Analytics.lua
 Modules\TestMode.lua
+Modules\Minimap.lua
 Core\Options.lua
