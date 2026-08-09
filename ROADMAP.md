@@ -953,12 +953,26 @@ just no longer sequenced first.
   how Gladius/Gladdy/GladiusEx are the enemy-frame precedents already named
   in the CurseForge listing - worth a quick look at what it does well/
   poorly before committing to an approach.
-- **Sitewide Cinzel-on-data font audit** - carved out of the 2026-08-04
-  Upgrades tab overhaul: Upgrades itself doesn't misuse the display font, so
-  the "unreadable in some places" feedback points at other screens
-  (character/guides/matches). Audit every `fonts.display*` usage (22 files as
-  of 2026-08-04) for cases applying it to dense/data text instead of
-  headings/chrome, and swap those to a legible body font.
+- **Sitewide Cinzel-on-data font audit — DONE 2026-08-08.** Carved out of
+  the 2026-08-04 Upgrades tab overhaul: Upgrades itself doesn't misuse the
+  display font, so the "unreadable in some places" feedback pointed at
+  other screens. Audited all `fonts.display*` usages across 25 files.
+  Most are legitimate — headings/chrome, or intentionally decorative
+  "stat tile" numbers (`crRating`, `statValue`, `ratingValue`, etc.), the
+  same defensible pattern already present in the clean Upgrades tab, left
+  alone rather than flagged as false positives. Two real bugs fixed:
+  `MatchHistory.tsx`'s `denseResult` (the W/L letter in the compact match
+  list) was the one cell using the ornate display font while every
+  sibling cell in that same dense, many-times-repeated row used the plain
+  system font — inconsistent and exactly the misapplication this audit
+  was looking for; `account.tsx`'s `mono` style (the public profile URL)
+  was using the display font despite being named for a legible/monospace
+  look — backwards for text users need to read and copy accurately.
+  `denseResult` live-verified (20 result letters on a real 200-match
+  character page, confirmed rendering in the plain system font); `mono`
+  is gated behind real Battle.net sign-in and couldn't be visually
+  confirmed the same way — noted honestly rather than claimed, but it's
+  the same one-line, typecheck-clean fix.
 - **Real stat-cap-aware upgrade priority engine** - carved out of the same
   overhaul (lightweight guide-text hint shipped instead, see Shipped). Needs
   two things that don't exist: a per-item stat database for BiS candidates
