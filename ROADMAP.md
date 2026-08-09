@@ -324,7 +324,13 @@ companion (`C:\dev\arena-armory-desktop`), and the web app / API
       the top `ARTICLES` entry (exported from `app/news/index.tsx`).
       Live-verified: bracket tab switching shows real, correct data (2v2
       top-5 differs from 3v3's, matches known ladder standings), 6
-      avatars loaded and rendered. **Deliberately NOT built: the
+      avatars loaded and rendered. **Reordered same session per Alex's
+      feedback: Recent Searches sits right after the search panel, above
+      the ladder preview/news** — same intent as the search form itself
+      (get back to a character you already looked up), so it's grouped
+      with it rather than pushed below the new discovery content. Costs
+      nothing for first-time visitors (the section renders nothing when
+      there's no history either way). **Deliberately NOT built: the
       "biggest movers" module** — needs day-over-day rank deltas, and
       only one real snapshot exists so far (P0 started 8/8, next cron
       run is the first real diff) — nothing to show until tomorrow, so
