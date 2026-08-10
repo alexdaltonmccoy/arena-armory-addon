@@ -131,12 +131,24 @@ companion (`C:\dev\arena-armory-desktop`), and the web app / API
     secret in plaintext since the initial commit. Repo is private
     (confirmed via `gh repo view`), so not a live leak, but a committed
     prod credential should be treated as compromised regardless — sanitized
-    to placeholders. **Still needs Alex to rotate the Firebase service-
-    account key in the Firebase console** (console-only action, not
-    something a session can do); low urgency given the private repo, but
-    real. Also flagged separately, unrelated: a pre-existing TS narrowing
-    bug in `api/contribute.ts` (mail-result diagnostics) — doesn't block
-    deploys, spun off as its own task.
+    to placeholders. **Firebase key rotated and closed out 2026-08-09**:
+    Alex generated a new service-account key in Firebase Console, updated
+    `FIREBASE_CLIENT_EMAIL`/`FIREBASE_PRIVATE_KEY` in both Vercel
+    (production) and the local `.env`, a fresh production deploy was
+    triggered (`vercel --prod`) so the live site actually picked up the new
+    key rather than just having it sit unused in the dashboard, both local
+    and production Firestore-backed endpoints verified serving real data
+    post-rotation, then the two old keys were deleted from the service
+    account in Google Cloud Console (IAM & Admin → Service Accounts →
+    Keys) — confirmed down to exactly one active key. Real gotcha hit
+    mid-way: two of the three active keys shared the same creation date
+    (both "Jul 5, 2026"), so date alone couldn't distinguish old-vs-older —
+    resolved by reasoning from what's actually in use rather than guessing
+    which one leaked: since both local and prod were already confirmed
+    running on the newly-generated key, both pre-existing keys were safe to
+    delete regardless of which one was the original leak. **The Blizzard
+    client secret half of this same leak is still unrotated** — only
+    Firebase was addressed this pass.
   - **P1, live by Sep 1 (S3 ladder-race traffic spike):**
     - **`/leaderboards` page — SHIPPED AND LIVE 2026-08-08**
       (wow-classic-armory, arenaarmory.com/leaderboards): bracket tabs
@@ -441,9 +453,12 @@ companion (`C:\dev\arena-armory-desktop`), and the web app / API
   - **Synergy:** the paused premium tier's leading candidate (population
     percentile benchmarks) requires exactly this ladder ingest — P0 doubles as
     the premium tier's data prerequisite.
-  - **Alex decisions needed:** trigger the AdSense re-review (gates indexing,
-    not building); density-threshold sign-off; rotate the Firebase service-
-    account key (console-only, see above). ~~confirm Aug 14 carve-in~~ moot —
+  - **Alex decisions needed:** ~~trigger the AdSense re-review~~ **done —
+    triggered, currently in Google's review queue as of 2026-08-09**;
+    density-threshold sign-off (re-summarized 2026-08-09: n≥50 real matches
+    per displayed cut — still blocked on data, not a decision, see Shipped
+    recently); ~~rotate the Firebase service-account key~~ **done
+    2026-08-09** (see Shipped recently). ~~confirm Aug 14 carve-in~~ moot —
     confirmed on the spot 8/8, freeze overruled for this repo.
 - **Phase 3 — remaining toward Sep 1** (Anniversary dates from
   [Blizzard](https://news.blizzard.com/en-us/article/24291476/bcc-anniversary-edition-black-temple-arrives-august-27)):
@@ -583,6 +598,29 @@ companion (`C:\dev\arena-armory-desktop`), and the web app / API
 
 ## Shipped recently
 
+- **Session close-out, 2026-08-09 (final): Firebase key rotation closed
+  out, AdSense re-review confirmed in queue, density threshold
+  re-summarized.** (1) AdSense: Alex confirms the re-review is already
+  triggered and sitting in Google's queue, no action needed - just
+  waiting. (2) Firebase Admin key, outstanding since the 8/8 committed-
+  secret finding: Alex generated a new service-account key, updated both
+  Vercel (production) and the local `.env`, a fresh production deploy was
+  triggered so the live site actually picked up the new key (env var
+  changes alone don't retroactively touch an already-built deployment),
+  both local and prod verified serving real Firestore data post-rotation,
+  then the two old keys deleted from Google Cloud Console down to exactly
+  one active key - real wrinkle: two of the three keys shared the same
+  creation date, resolved by reasoning from what's actually in use (both
+  local/prod already confirmed on the new key) rather than trying to
+  identify which specific old key had leaked. Blizzard client secret half
+  of the same original leak is still unrotated - not addressed this pass.
+  (3) Density threshold for the comp meta dashboard re-summarized since
+  Alex couldn't recall it: n≥50 real matches per displayed cut, sample
+  sizes labeled, specifically to avoid the dashboard reading as one
+  account's personal history. Checked live, read-only: 617 total
+  matches now vs. ~1 real uploading account as of 8/7 - volume grew but
+  the account-diversity problem the threshold exists to prevent hasn't,
+  so this stays blocked on real usage, not more building.
 - **Addon v1.9.0, 2026-08-09 (later still): Tier 2 announcer callouts -
   the GSA parity gap fully closed.** 13 new voice clips (Blade Flurry,
   Intervene, Bestial Wrath, Shield Bash, Arcane Torrent, Blood Fury,
