@@ -598,6 +598,79 @@ companion (`C:\dev\arena-armory-desktop`), and the web app / API
 
 ## Shipped recently
 
+- **Android closed testing, 2026-08-14/15 (day 7 of 16): the AAB in testers'
+  hands was the pre-fix crash-on-launch build - found by auditing, not by
+  the paid tester report, which had said the opposite.** Testers Community
+  returned two PDFs (feedback report + production-access questionnaire
+  answers). The feedback report claims "no critical issues such as crashes
+  or bugs" across "all devices and SDK configurations" - but names zero
+  devices, zero OS versions, no repro steps, no screenshots, and its four
+  recommendations (do ASO, better screenshots, add onboarding, improve
+  layouts) are template boilerplate. Treated as proof-of-life for 12
+  opted-in accounts, not as a QA pass. The audit found the opposite of what
+  it claimed: **the newest Android build was versionCode 13, built
+  2026-08-06 18:14 UTC from `de62cdfa`, whose tree has
+  `extra.router.origin: false` while `app/index.tsx` renders `PageMeta` ->
+  `expo-router/head` with no platform gate** - the exact condition Alex
+  reproduced by hand on iOS build 9 and fixed the next day in `cbb221f`
+  (2026-08-07 18:57). No Android build had been cut since, so the fix never
+  reached Android. Verified at the store level too, via a read-only Play
+  Developer API call (transient edit, never committed): alpha track =
+  versionCode 13, internal = versionCode 10.
+- **Same pass: two portfolio-doc facts corrected, both load-bearing.**
+  (1) `PORTFOLIO_ROADMAP.md` recorded the closed test as running on the
+  **Internal-testing track**, which would have meant the 12x14 gate was
+  being satisfied by nothing at all. The Play API says it's the **alpha**
+  track (Play's default Closed testing track), status completed - so the
+  days do count and there was nothing to fix. Worth knowing the roadmap was
+  wrong about it: at day 7 that error was cheap, at day 16 it would have
+  cost the entire paid run. (2) `eas.json`'s
+  `submit.production.android.track` was `"internal"` - a fixed build pushed
+  via `eas submit` would have landed on the track the testers are not on.
+  Now `"alpha"`, matching the verified track name.
+- **The real risk in the two PDFs was not the bug - it was the
+  questionnaire.** Testers Community's draft answers have Alex telling
+  Google that "we reached out to our target users, World of Warcraft
+  players" (didn't happen), that tester insights "led to critical
+  improvements" (the report contains no tester-specific insight), that
+  feedback came "through surveys and direct communication" (it was a vendor
+  PDF), and - question 8, what changed during the closed test - that "we
+  improved layouts, added a dynamic walkthrough for new users, and updated
+  screenshots." **None of those three shipped; there is no onboarding
+  walkthrough in this app.** Google reviews production-access applications
+  by hand and can check claims against release history, and false
+  statements there are an account-level risk, not a listing-level one - the
+  same Play developer account carries Sobermaxx's Sober October timeline.
+  Decision: do not submit the vendor answers; write all 10 from what
+  actually happened. The true story is the stronger one anyway - found a
+  launch-blocking bug through real device testing, fixed it at the config
+  root, shipped a corrected build mid-window.
+- **Build 14 cut and finished** (`21147be3`, master, includes `cbb221f`).
+  A duplicate versionCode 13 from the same commit finished 28 seconds
+  earlier and is unusable - Play already has 13 on alpha and rejects
+  duplicate versionCodes - so **submit 14 by build ID, not `--latest`**.
+  Still open at close-out: verify the launch path on a real device via Play
+  Console **Internal app sharing** (production profile builds an `.aab`, so
+  sideloading isn't possible and no APK profile build was cut), then
+  `eas submit` to alpha. Pushing 14 replaces 13 for the testers **without
+  resetting their opt-in clock** - that clock tracks continuous tester
+  opt-in, not the artifact. Note build 14 is build 13 + ~25 commits (header
+  search, `/leaderboards`, hydration fixes, Upgrades sign-in gate,
+  character-header rework), none of it yet exercised on Android - so the
+  device check is a real smoke test, not a formality.
+- **One usable item in the feedback report, worth checking:** it claims the
+  app description is "minimal and lacks sufficient keywords." That is false
+  about `wow-classic-armory/store-listing.md`, which holds a ~2,000-char
+  keyword-dense description (character lookup, TBC Anniversary, gear,
+  talents, PvP, guilds). So either the tester never opened the listing, or
+  **that copy was never pasted into Play Console** - the App Store version
+  was pasted 8/6, the Play one has no record. Five-minute fix if it's still
+  a stub, and it's the only specific, checkable observation in either PDF.
+  Deliberately NOT doing: the recommended onboarding walkthrough (generic
+  advice, not real user pain - this is a lookup utility, a guided tour
+  between the player and the search box makes first-run worse) and
+  "improved layouts" (unactionable as written - no screen, no device, no
+  specifics).
 - **Session close-out, 2026-08-09 (final): Firebase key rotation closed
   out, AdSense re-review confirmed in queue, density threshold
   re-summarized.** (1) AdSense: Alex confirms the re-review is already
@@ -1065,6 +1138,21 @@ resume the programmatic-pages work once either approved or the
 content-quality signal is clearly stronger. AdSense isn't abandoned — it
 was never the durable plan anyway (see the declining-search caveat above) —
 just no longer sequenced first.
+
+**Re-review update (2026-08-14): rejected again, identical reason.** Google's
+policy-violation notice cited the same "Low value content" / minimum-content-
+requirements issue as the 8/4 rejection — the BlizzCon-content push and
+whatever else shipped between 8/4 and now didn't move the needle on Google's
+automated read of the site. **Alex's call, 2026-08-14: stop chasing AdSense
+specifically — deprioritize it way down the revenue list, probably off it
+entirely as a source for Arena Armory.** It's genuinely low priority (this
+was already the #4-ranked revenue move below, behind premium tier, the
+ArenaAnalytics import, and programmatic pages generally) and not worth
+further re-review cycles or content work aimed at winning Google's approval.
+The `noindex`-until-approved leaderboard/meta-page gating below stays as
+architecture (harmless either way) but should no longer be tracked as an
+active blocker to unblock — treat those pages as indexable-on-their-own-
+merits work, not AdSense-gated work.
 
 **Revenue moves, ROI-ranked (re-ranked 2026-08-04 for the AdSense hold):**
 1. **Premium tier ($3–5/mo)** — moved up: doesn't need Google's approval or
