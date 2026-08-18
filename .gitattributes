@@ -1,0 +1,21 @@
+# Normalize line endings: store LF in the repo, let core.autocrlf handle
+# checkout conversion per platform. Prevents CRLF/LF churn showing up as
+# spurious diffs across vendor libs (LibStub, Ace3, etc.) and addon code.
+* text=auto
+
+*.lua text
+*.xml text
+*.toc text
+*.md text
+*.js text
+*.ps1 text
+*.json text
+*.yml text
+*.pkgmeta text
+*.mdc text
+.gitattributes text
+.gitignore text
+
+# Binary assets — never touch line endings on these
+*.ogg binary
+*.png binary
