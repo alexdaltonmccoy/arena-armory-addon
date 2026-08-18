@@ -610,6 +610,17 @@ companion (`C:\dev\arena-armory-desktop`), and the web app / API
 
 ## Shipped recently
 
+- **`.gitattributes` added, 2026-08-17** — locks in LF-in-repo line endings
+  (`text=auto` for Lua/XML/TOC/MD/JS/PS1/JSON/YML, `binary` for
+  `.ogg`/`.png`) so a future machine/session with a different
+  `core.autocrlf` can't reintroduce a mass CRLF/LF diff across vendor libs
+  (LibStub, Ace3) and addon code. Prompted by a false alarm — a report of
+  "nearly every file modified" turned out to be a stale observation;
+  `git status`/`git diff` were already clean and `core.autocrlf=true` was
+  already converting correctly (verified by comparing the committed LF
+  blob against the CRLF working-tree copy of `LibStub.lua`), so nothing
+  was reset — just hardened against drift. Committed `6797672`, pushed to
+  `origin/master`.
 - **AI-powered play-by-play match review — feasibility spike complete,
   2026-08-17.** Input to the direction decision on the paused premium tier
   (see "Next up" above). Question: does the combat log carry position data,
