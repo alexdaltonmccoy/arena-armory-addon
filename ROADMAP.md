@@ -595,9 +595,42 @@ companion (`C:\dev\arena-armory-desktop`), and the web app / API
   from ~0 real accounts, but no growth data exists yet; resume once Android/
   iOS review clears and there's a real signal to size premium against, not
   before.
+  **2026-08-17: paused a second way, pending a new direction.** Per Alex's
+  8/17 note, premium is now paused specifically pending a direction decision
+  on AI-powered play-by-play match review (log-first vs. video-first vs.
+  hybrid) as a possible premium anchor feature, not just pending growth
+  signal. Feasibility spike complete same day — see
+  `AI_PLAYBYPLAY_FEASIBILITY_SPIKE_2026-08-17.md` (this folder) and the
+  "Shipped recently" entry below. Net: log-first narration is buildable
+  today off data `Recorder.lua` already captures; positional/spatial
+  coaching is structurally out of reach for log-only (WoW's combat log
+  never carries position, and enemy `UnitPosition` is API-blocked even via
+  live polling) and would need a video pipeline that doesn't exist yet.
+  Direction call is Alex's; nothing scoped or built past the spike.
 
 ## Shipped recently
 
+- **AI-powered play-by-play match review — feasibility spike complete,
+  2026-08-17.** Input to the direction decision on the paused premium tier
+  (see "Next up" above). Question: does the combat log carry position data,
+  and does the addon capture it? Read the addon's own CLEU unpacking
+  (`Core.lua:184-191`, `Recorder.lua`'s `OnCLEU`) rather than relying on
+  general API memory — confirmed the standard Blizzard CLEU arg shape
+  carries no coordinate field on any WoW client, for any subevent, and
+  grepped the whole `ArenaArmory` tree to confirm the addon captures no
+  position today (nothing to turn on — the source it would read from
+  doesn't carry it). Second-order finding: even live-polling instead of the
+  log doesn't fix this — `UnitPosition()` is API-blocked for hostile arena
+  opponents (anti-radar-hack restriction), so enemy positioning is
+  unreachable either way, log or live-poll. Not live-verified in-game this
+  session (no client access from the coding session) — flagged as a
+  5-minute real-match check before it's load-bearing for any pitch or
+  customer claim. Net: log-first narration (CDs, CC, focus-fire, damage
+  timeline) is buildable today off data `Recorder.lua`'s v4 schema already
+  records (`events`, `timeline`); positional/spatial coaching needs a video
+  pipeline that doesn't exist yet and is a separate, larger bet. Full
+  writeup: `AI_PLAYBYPLAY_FEASIBILITY_SPIKE_2026-08-17.md` (this folder),
+  committed `f329cf6`.
 - **Android closed testing, 2026-08-14/15 (day 7 of 16): the AAB in testers'
   hands was the pre-fix crash-on-launch build - found by auditing, not by
   the paid tester report, which had said the opposite.** Testers Community
