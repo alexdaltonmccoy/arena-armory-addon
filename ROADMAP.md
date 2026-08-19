@@ -610,6 +610,35 @@ companion (`C:\dev\arena-armory-desktop`), and the web app / API
 
 ## Shipped recently
 
+- **Android: build 15 confirmed live on alpha, Play Console short description
+  fixed, 2026-08-19 (same day, later still).** Alex asked what Android still
+  needed after the iOS resubmission. Checked the real state via a read-only
+  Android Publisher API call (`google-play-service-account.json`, already an
+  EAS Submit credential — no new secret) rather than trust the stale 8/14
+  "day 7 of 16" roadmap snapshot: **alpha track = versionCode 15, status
+  completed** — today's `eas submit` (in the iOS build/submit push above)
+  already carries both the Aug 7 crash-on-launch config fix and today's
+  Guideline 2.1/2.3.10 native-linking fix to Android too, no separate Android
+  build needed. Per established precedent this doesn't reset the testers'
+  14-day opt-in clock. Also checked the tester report's one checkable claim
+  ("description is minimal, lacks keywords") — **false on the full
+  description** (1,424 chars live, matches `store-listing.md` verbatim) but
+  **true on the short description**, which was showing the iOS App Store
+  subtitle ("WoW Classic Character Lookup") instead of Play's own drafted
+  copy. Fixed via the API: first attempt hit a real 403 (`eas-submit@wow-
+  armory-play-api`'s service account had release-management scope but not
+  Store presence), Alex granted that permission in Play Console, retried,
+  committed, and read the live value back to confirm rather than trust the
+  200 response — now correctly "Character & guild lookup for WoW Classic:
+  TBC Anniversary - gear, talents, PvP." **Still open, Alex-only:** check
+  Play Console → Closed testing → Testers for the actual current opted-in
+  day count (not visible via this API) to know when production access can be
+  applied for, and the 10 production-access questionnaire answers still need
+  writing from what actually happened (established 8/14 decision: do not
+  submit Testers Community's drafts) — offered to draft them once Alex
+  pastes the real questions, same pattern as the Apple reply above.
+  Real-device smoke test on build 15 also still open (no Android
+  device/emulator in this session either).
 - **iOS 1.1.0 (11) resubmitted for App Review, 2026-08-19 (same day, final) —
   the rejection cycle is fully closed out on our end.** Alex attached his
   screen recording, pasted the drafted Resolution Center reply, and hit
