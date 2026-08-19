@@ -85,14 +85,6 @@ companion (`C:\dev\arena-armory-desktop`), and the web app / API
 
 ## Next up
 
-- **iOS 1.1.0 (10) resubmission — only remaining step is Alex clicking Submit
-  in App Store Connect (added 2026-08-19, downgraded from blocking same day).**
-  Everything else is done: build 1.1.0 (11) is on TestFlight, Alex confirmed
-  the full Battle.net sign-in flow on a real device against it, and a Resolution
-  Center reply is drafted and confirmed accurate against his own screen
-  recording (see "Shipped recently" below for the full writeup and Apple's
-  actual literal rejection text). Remaining: attach the recording, paste the
-  reply, submit build 11 for App Review.
 - **Ironforge.pro parity / "PvP destination" plan (added 2026-08-08, from the
   competitive brief review — full reasoning, code-verified corrections, and
   the §8 answers in `COMPETITIVE_RESPONSE_IRONFORGE_2026-08-08.md`, this
@@ -618,6 +610,12 @@ companion (`C:\dev\arena-armory-desktop`), and the web app / API
 
 ## Shipped recently
 
+- **iOS 1.1.0 (11) resubmitted for App Review, 2026-08-19 (same day, final) —
+  the rejection cycle is fully closed out on our end.** Alex attached his
+  screen recording, pasted the drafted Resolution Center reply, and hit
+  Submit for Review in App Store Connect. Nothing left to build or verify;
+  waiting on Apple now. See the entry below for the full build/verify/reply
+  writeup and Apple's actual rejection text.
 - **iOS 1.1.0 (10) App Store rejection — both cited guidelines fixed in
   `wow-classic-armory`, 2026-08-19.** Cowork had already root-caused both from
   the code; this session implemented the fixes. **Guideline 2.3.10:**
