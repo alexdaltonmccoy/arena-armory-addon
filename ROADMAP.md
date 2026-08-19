@@ -85,6 +85,18 @@ companion (`C:\dev\arena-armory-desktop`), and the web app / API
 
 ## Next up
 
+- **iOS 1.1.0 (10) resubmission — device verify + Apple reply (blocking, added
+  2026-08-19).** Apple rejected build 10 on two guidelines; both are code-fixed
+  in `wow-classic-armory` (see "Shipped recently" below) but **not yet
+  verified on a real device/simulator** — this class of bug (OAuth redirect,
+  deep-link capture) needs that pass, `tsc --noEmit` alone isn't enough, and
+  the coding session had no device access. Remaining: (1) EAS build + install
+  on a real iOS device, exercise Battle.net sign-in from the Account tab
+  end-to-end (native browser session → Battle.net → deep link back →
+  signed-in state persists), and the same on Android; (2) re-submit build 11+
+  to App Store Connect (`autoIncrement` handles the number) with a reply to
+  Apple's Guideline 2.1 question explaining native linking is now reachable.
+  Alex said no rush — get the redirect flow right over rushing a fragile pass.
 - **Ironforge.pro parity / "PvP destination" plan (added 2026-08-08, from the
   competitive brief review — full reasoning, code-verified corrections, and
   the §8 answers in `COMPETITIVE_RESPONSE_IRONFORGE_2026-08-08.md`, this
@@ -610,6 +622,47 @@ companion (`C:\dev\arena-armory-desktop`), and the web app / API
 
 ## Shipped recently
 
+- **iOS 1.1.0 (10) App Store rejection — both cited guidelines fixed in
+  `wow-classic-armory`, 2026-08-19.** Cowork had already root-caused both from
+  the code; this session implemented the fixes. **Guideline 2.3.10:**
+  `components/ui/StoreBadges.tsx` rendered an unconditional "Join Android
+  Beta / Google Play" badge on `app/index.tsx` and `app/getting-started.tsx`
+  with no platform gate, so cross-platform store promotion compiled straight
+  into the iOS binary — now `Platform.OS !== "web"` returns `null` from the
+  component, and the two wrapping promo sections ("Also on mobile" home
+  panel, "Take it with you" panel on Getting Started) are gated the same way
+  rather than left rendering an empty heading over nothing on native.
+  **Guideline 2.1 (the real work):** Battle.net account linking was web-only
+  — `SiteHeader.tsx`'s `AccountChip` hard-returned `null` off-web and
+  `authContext.native.tsx` was a full no-op stub — despite Apple's rejection
+  reason, no native sign-in existed to reach. Built it for real, reusing the
+  existing web OAuth backend as-is (it already ends by minting a Firebase
+  custom token, not a session cookie): `api/auth/bnet/login.ts` now accepts
+  `?native=1` and sets a second short-lived cookie
+  (`aa_bnet_native`/`OAUTH_NATIVE_COOKIE`, `api/_lib/bnetOAuth.ts`) alongside
+  the existing CSRF state cookie; `api/auth/bnet/callback.ts` reads it and
+  redirects to `wowarmory://auth-callback#fbtoken=...` (the scheme was
+  already configured in `app.json`) instead of the web `/account#fbtoken=...`
+  redirect, including on failure paths (`?bnet=error&reason=...`), and clears
+  both cookies. `lib/authContext.native.tsx` is now a real provider: opens
+  the login URL via `expo-web-browser`'s `openAuthSessionAsync` (added
+  dependency), catches the deep-link return, and signs in with
+  `@react-native-firebase/auth`'s `signInWithCustomToken` (added dependency —
+  reuses the native Firebase project already wired for Analytics, so no new
+  config beyond `npx expo install` auto-adding both to `app.json`'s plugins
+  array). `SiteHeader.tsx`'s `AccountChip` is un-gated for native, giving it a
+  real reachable nav entry point (phones report narrow via
+  `useIsNarrowScreen`, so it surfaces in the hamburger dropdown).
+  `app/account.tsx` needed no changes — it already consumed `useAuth()` /
+  `startBnetSignIn()` with no platform branching, so it lights up correctly
+  once the native context is real. `store-listing.md` /
+  `ANDROID_PLAY_CLOSED_TESTING.md`'s "What's New" copy already claimed
+  "Battle.net account linking on the Account page" — no edit needed, it's now
+  actually true. Verified: `tsc --noEmit` clean across the whole repo (lint
+  couldn't run — pre-existing missing ESLint config, unrelated to this
+  change). **Not yet verified on a real device** — this class of bug usually
+  needs one; see the new blocking "Next up" item above for the remaining
+  device-test + App Store Connect resubmission steps.
 - **`.gitattributes` added, 2026-08-17** — locks in LF-in-repo line endings
   (`text=auto` for Lua/XML/TOC/MD/JS/PS1/JSON/YML, `binary` for
   `.ogg`/`.png`) so a future machine/session with a different
