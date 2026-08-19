@@ -85,18 +85,14 @@ companion (`C:\dev\arena-armory-desktop`), and the web app / API
 
 ## Next up
 
-- **iOS 1.1.0 (10) resubmission — device verify + Apple reply (blocking, added
-  2026-08-19).** Apple rejected build 10 on two guidelines; both are code-fixed
-  in `wow-classic-armory` (see "Shipped recently" below) but **not yet
-  verified on a real device/simulator** — this class of bug (OAuth redirect,
-  deep-link capture) needs that pass, `tsc --noEmit` alone isn't enough, and
-  the coding session had no device access. Remaining: (1) EAS build + install
-  on a real iOS device, exercise Battle.net sign-in from the Account tab
-  end-to-end (native browser session → Battle.net → deep link back →
-  signed-in state persists), and the same on Android; (2) re-submit build 11+
-  to App Store Connect (`autoIncrement` handles the number) with a reply to
-  Apple's Guideline 2.1 question explaining native linking is now reachable.
-  Alex said no rush — get the redirect flow right over rushing a fragile pass.
+- **iOS 1.1.0 (10) resubmission — only remaining step is Alex clicking Submit
+  in App Store Connect (added 2026-08-19, downgraded from blocking same day).**
+  Everything else is done: build 1.1.0 (11) is on TestFlight, Alex confirmed
+  the full Battle.net sign-in flow on a real device against it, and a Resolution
+  Center reply is drafted and confirmed accurate against his own screen
+  recording (see "Shipped recently" below for the full writeup and Apple's
+  actual literal rejection text). Remaining: attach the recording, paste the
+  reply, submit build 11 for App Review.
 - **Ironforge.pro parity / "PvP destination" plan (added 2026-08-08, from the
   competitive brief review — full reasoning, code-verified corrections, and
   the §8 answers in `COMPETITIVE_RESPONSE_IRONFORGE_2026-08-08.md`, this
@@ -660,9 +656,52 @@ companion (`C:\dev\arena-armory-desktop`), and the web app / API
   "Battle.net account linking on the Account page" — no edit needed, it's now
   actually true. Verified: `tsc --noEmit` clean across the whole repo (lint
   couldn't run — pre-existing missing ESLint config, unrelated to this
-  change). **Not yet verified on a real device** — this class of bug usually
-  needs one; see the new blocking "Next up" item above for the remaining
-  device-test + App Store Connect resubmission steps.
+  change). Real device verification and resubmission: see the next entry
+  below, same day.
+- **iOS 1.1.0 (11) built, submitted, and device-verified working; Apple reply
+  drafted against their actual rejection text, 2026-08-19 (same day, later).**
+  A concurrent-session collision briefly blocked the `C:\dev` root commit for
+  the fix above (another session's close-out swept it into its own commit
+  while a stale `.git/index.lock` sat in the way) — content landed intact,
+  flagged rather than silently forced through. Alex then asked to push, verify
+  on-device, and (if it passed) build/submit/reply. Real constraints surfaced
+  immediately: this coding environment is Windows (no Xcode/iOS Simulator
+  possible at all) and had no Android device/emulator attached (`adb devices`
+  empty) — device verification could only ever be Alex's own hands, and since
+  the native-linking code is new, no existing build (including the rejected
+  build 10) contained it to test in the first place, so a build had to come
+  *before* verification, not after. Cut `eas build --platform all --profile
+  production` — first attempt failed non-interactively on a dirty working
+  tree (`.claude/launch.json`, a local Claude Code dev-server config, was
+  untracked and tripping `eas.json`'s `requireCommit`; fixed by gitignoring
+  `.claude/`, not by committing a machine-local file). Second attempt shipped
+  clean: Android versionCode 15, iOS build 1.1.0 (11). `eas submit` to both
+  stores hit the same snag twice — background shell invocations reset to the
+  session's primary repo (`wow-gladius`) instead of staying in
+  `wow-classic-armory`, so the first submit attempts failed with "run this
+  command inside a project directory" until each was re-run with an explicit
+  `cd`. Both landed: Android to the Play `alpha` track, iOS uploaded to App
+  Store Connect / TestFlight. **Real cost note:** this build pushed EAS usage
+  to $12 in pay-as-you-go overage this billing period (38 builds past
+  included credits) — flagged to Alex, not hidden in the roadmap noise.
+  Alex installed build 11 and **confirmed the full Battle.net sign-in flow
+  works end-to-end on a real device.** Apple's actual rejection text was then
+  shared (previously only summarized secondhand by Cowork): Guideline 2.1's
+  literal question was narrower than assumed — not about OAuth mechanics at
+  all, just *"Can you tell us how to locate the Account Page mentioned in
+  What's New?"* — which lines up exactly with the root cause (`AccountChip`
+  returned `null` unconditionally on native in build 10, so there was
+  nothing to find). Apple's review device was an 11" iPad Air specifically,
+  which matters: at that width `useIsNarrowScreen`'s 700px breakpoint means
+  the fixed Account entry renders as an inline "Sign in" pill directly in the
+  top nav bar, not behind the phone-width hamburger menu — the reply was
+  written to describe that exact reviewer-visible placement, and Alex
+  confirmed it against his own screen recording before it goes in. Reply
+  drafted, tightened to answer Apple's literal question first, and confirmed
+  accurate — pasting it into Resolution Center with the recording attached
+  and hitting Submit for Review are the only remaining steps, and they're
+  Alex-only (no App Store Connect access from this session). See the
+  lightened "Next up" item above.
 - **`.gitattributes` added, 2026-08-17** — locks in LF-in-repo line endings
   (`text=auto` for Lua/XML/TOC/MD/JS/PS1/JSON/YML, `binary` for
   `.ogg`/`.png`) so a future machine/session with a different
