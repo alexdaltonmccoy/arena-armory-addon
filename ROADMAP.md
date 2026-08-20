@@ -630,13 +630,19 @@ companion (`C:\dev\arena-armory-desktop`), and the web app / API
   Store presence), Alex granted that permission in Play Console, retried,
   committed, and read the live value back to confirm rather than trust the
   200 response — now correctly "Character & guild lookup for WoW Classic:
-  TBC Anniversary - gear, talents, PvP." **Still open, Alex-only:** check
-  Play Console → Closed testing → Testers for the actual current opted-in
-  day count (not visible via this API) to know when production access can be
-  applied for, and the 10 production-access questionnaire answers still need
-  writing from what actually happened (established 8/14 decision: do not
-  submit Testers Community's drafts) — offered to draft them once Alex
-  pastes the real questions, same pattern as the Apple reply above.
+  TBC Anniversary - gear, talents, PvP." **Real day-count confirmed by Alex
+  from the Play Console Dashboard itself (2026-08-19, later still): 13
+  continuous days of 12+ testers opted in, one short of the 14-day minimum —
+  "Apply for production" still correctly greyed out.** Note this is a
+  different number from Testers Community's own dashboard ("Day 11/16"),
+  which tracks their unrelated 16-day service package, not Play's 14-day
+  gate — don't confuse the two when checking progress. Still open, Alex-only:
+  wait out the last day, then click "Preview questions" (visible next to the
+  checklist even before the gate unlocks) to get the actual 10
+  production-access questions; the answers still need writing from what
+  actually happened (established 8/14 decision: do not submit Testers
+  Community's drafts) — offered to draft them once Alex pastes the real
+  questions, same pattern as the Apple reply above.
   Real-device smoke test on build 15 also still open (no Android
   device/emulator in this session either).
 - **iOS 1.1.0 (11) resubmitted for App Review, 2026-08-19 (same day, final) —
