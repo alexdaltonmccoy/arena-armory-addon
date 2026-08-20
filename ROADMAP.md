@@ -610,6 +610,22 @@ companion (`C:\dev\arena-armory-desktop`), and the web app / API
 
 ## Shipped recently
 
+- **arenaarmory.com: title cutoffs fixed to Blizzard's real numbers, homepage
+  class colors, search scroll, footer wrap, 2026-08-20.** The ladder page's
+  title-tier cutoffs (Gladiator/Duelist/Rival/etc.) had been a computed
+  percentile estimate over the site's own leaderboard snapshot — checking it
+  against the real Season 2 numbers read directly off the in-game Arena
+  Bulletin Board showed the estimate running **200-600 rating high** (e.g.
+  3v3 Gladiator estimated at 2534 vs. the board's actual 2298), because the
+  50+ wins eligibility filter narrows the snapshot to a smaller,
+  more-committed pool than Blizzard's real eligible population. Now uses the
+  real Season 2 cutoffs as the source of truth when available, falling back
+  to the percentile estimate only for a bracket/season nobody's captured
+  from the board yet. Also: the homepage's top-ladder preview now colors
+  character names by class (previously plain text, inconsistent with the
+  full leaderboard table), the header search's recent-searches list scrolls
+  instead of overflowing the page, and the site footer wraps instead of
+  overflowing on mobile.
 - **Android: build 15 confirmed live on alpha, Play Console short description
   fixed, 2026-08-19 (same day, later still).** Alex asked what Android still
   needed after the iOS resubmission. Checked the real state via a read-only
