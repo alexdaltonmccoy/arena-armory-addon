@@ -1,5 +1,11 @@
 # Changelog
 
+## v1.9.1 (2026-08-24)
+- Fixed the voice/callout system (trinket, casts, drinking, low health)
+  sometimes announcing nonsense "Enemy N" alerts during Battlegrounds. Those
+  callouts are meant for Arena only; they could fire off leftover arena unit
+  data that has nothing to do with what's actually happening in the BG.
+
 ## v1.9.0 (2026-08-09)
 - New: 13 more announcer callouts — Blade Flurry, Intervene, Bestial Wrath,
   Shield Bash (interrupt callouts, off by default like Kick/Pummel), Arcane
