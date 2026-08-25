@@ -644,7 +644,16 @@ companion (`C:\dev\arena-armory-desktop`), and the web app / API
   guesses to `AA.detectedSpecs` outside arena, but that table is wiped on
   every real arena join and never renders anywhere without a shown frame —
   a latent data-hygiene nit, not a user-visible bug. Real arena behavior
-  untouched; no other files changed.
+  untouched; no other files changed. **Correction, same day:** the initial
+  push to `master` did NOT ship this to users — `.github/workflows/release.yml`
+  only fires `BigWigsMods/packager` (CurseForge/Wago/GitHub upload) on a `v*`
+  tag push, not on plain commits; confirmed via `gh run list` that no new
+  workflow run had started after the master push, exactly matching what
+  Alex observed. Cut and tagged **v1.9.1** (`CHANGELOG.md` entry added,
+  required by the workflow's changelog-coverage check), pushed the tag, and
+  watched the run to completion (`gh run watch`) — all steps green,
+  including package/upload; GitHub release `v1.9.1` confirmed live with the
+  built zip attached. Live on CurseForge/Wago/GitHub now.
 - **arenaarmory.com: title cutoffs fixed to Blizzard's real numbers, homepage
   class colors, search scroll, footer wrap, 2026-08-20.** The ladder page's
   title-tier cutoffs (Gladiator/Duelist/Rival/etc.) had been a computed
