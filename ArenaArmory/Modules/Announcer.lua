@@ -212,6 +212,10 @@ end
 -------------------------------------------------------------------------------
 
 function Announcer:OnTrinketUsed(_, i)
+    if not AA.inArena then
+        self:DebugPrint(("trinket ignored outside arena (arena%d)"):format(i or -1))
+        return
+    end
     if AA.testMode then
         self:DebugPrint(("trinket ignored in test mode (arena%d)"):format(i or -1))
         return
@@ -241,6 +245,10 @@ function Announcer:TryAnnounceSpell(spellId, source)
 end
 
 function Announcer:OnCastStart(_, unit, _, spellId)
+    -- arenaN unit tokens are only valid inside a real Arena instance; outside
+    -- one (e.g. a Battleground) they can still resolve to stale/leftover
+    -- data, producing nonsense "arena N" callouts.
+    if not AA.inArena then return end
     local i = AA.ArenaIndex(unit)
     if not i then return end
 
@@ -283,6 +291,7 @@ function Announcer:OnCLEU(_, _, subevent, sourceGUID, sourceName, sourceFlags, _
 end
 
 function Announcer:OnUnitAura(_, unit)
+    if not AA.inArena then return end
     local i = AA.ArenaIndex(unit)
     if not i or not AA.db.profile.announcer.drink then return end
 
@@ -305,6 +314,7 @@ function Announcer:OnUnitAura(_, unit)
 end
 
 function Announcer:OnUnitHealth(_, unit)
+    if not AA.inArena then return end
     local i = AA.ArenaIndex(unit)
     if not i then return end
     local cfg = AA.db.profile.announcer

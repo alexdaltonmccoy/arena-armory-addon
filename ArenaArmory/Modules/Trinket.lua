@@ -95,6 +95,10 @@ function Trinket:OnEnable()
 end
 
 function Trinket:OnUnitSpellcast(_, unit, _, spellId)
+    -- arenaN tokens (and events tied to them) are only meaningful inside a
+    -- real Arena instance; outside one (e.g. a Battleground) they can still
+    -- resolve to stale/leftover data and must not be trusted.
+    if not AA.inArena then return end
     if not AA.db.profile.trinket.enabled then return end
     local i = AA.ArenaIndex(unit)
     if not i then return end

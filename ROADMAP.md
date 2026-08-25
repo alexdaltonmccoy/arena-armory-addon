@@ -610,6 +610,41 @@ companion (`C:\dev\arena-armory-desktop`), and the web app / API
 
 ## Shipped recently
 
+- **Addon bug fix: voice/callout system firing nonsense "arena N" alerts in
+  Battlegrounds, 2026-08-24.** Alex reported real BG matches producing
+  arena-style callouts ("Enemy 2 trinket," etc.) that don't correspond to
+  anything real in a BG. Root-caused by reading the actual event handlers,
+  not guessing: `arena1`/`arena2`/`arena3` unit tokens are only meaningful
+  inside a real Arena instance, but `Announcer.lua`'s `OnCastStart` (cast
+  callouts), `OnUnitAura` (drinking callouts), and `OnUnitHealth` (low-health
+  callouts) — plus `Trinket.lua`'s `OnUnitSpellcast` (the "primary" trinket
+  detection path, explicitly commented as bypassing the GUID map "for
+  reliability, what Gladdy uses") — all registered raw Blizzard unit events
+  (`UNIT_SPELLCAST_START`, `UNIT_AURA`, `UNIT_HEALTH`, `UNIT_SPELLCAST_SUCCEEDED`)
+  and trusted the `unit` token directly with no `AA.inArena` gate. Every other
+  module that reads raw `arenaN` tokens the same way (`Frames.lua`,
+  `PartyMark.lua`, `Analytics.lua`, `SpecDetection.lua`, `TestMode.lua`)
+  already guards on the addon's own `AA.inArena` flag (set/cleared in
+  `Core.lua` on every zone transition) before trusting them — these four
+  handlers were the exceptions. CLEU-based paths (`Announcer:OnCLEU`,
+  `Trinket:OnCLEU`, `DR.lua`, `Cooldowns.lua`) were already safe since they
+  resolve units through `AA.guidToUnit`, which is wiped on every arena
+  enter/leave. **Not a regression from the v1.8.0/v1.9.0 callout
+  expansion** — confirmed via `git log`: both unguarded paths existed since
+  the addon's very first commit (`c34e179`, v1.1), predating even the
+  v1.5.0 voice pack. Fixed by adding the same `if not AA.inArena then
+  return end` guard clause used everywhere else in the codebase, at the top
+  of all four handlers (`ArenaArmory/Modules/Announcer.lua`,
+  `ArenaArmory/Modules/Trinket.lua`). Also noted but *not* fixed (no
+  visible-output impact, out of scope for this pass): `Auras.lua`'s
+  `OnUnitAura` has the same unguarded-`UNIT_AURA` shape but is naturally
+  safe because it early-returns unless the enemy frame is already shown,
+  and frames are only ever shown while `AA.inArena`; `SpecDetection.lua`'s
+  `ScanBuffs` (also unguarded on raw `UNIT_AURA`) could write stray spec
+  guesses to `AA.detectedSpecs` outside arena, but that table is wiped on
+  every real arena join and never renders anywhere without a shown frame —
+  a latent data-hygiene nit, not a user-visible bug. Real arena behavior
+  untouched; no other files changed.
 - **arenaarmory.com: title cutoffs fixed to Blizzard's real numbers, homepage
   class colors, search scroll, footer wrap, 2026-08-20.** The ladder page's
   title-tier cutoffs (Gladiator/Duelist/Rival/etc.) had been a computed
