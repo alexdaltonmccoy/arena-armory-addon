@@ -124,8 +124,9 @@ companion (`C:\dev\arena-armory-desktop`), and the web app / API
     Snapshot shape has `season`/`bracket`/`region`/`capturedAt` at the doc
     level (not per-realm as originally sketched, since realm comes back
     embedded per entry in the merged ladder) — everything else in this plan
-    reads from this store. Cadence stays daily through the S2 window; from
-    Sep 1 tighten to every 2–4h per the plan below.
+    reads from this store. ~~Cadence stays daily through the S2 window; from
+    Sep 1 tighten to every 2–4h per the plan below.~~ **Done 2026-08-29,
+    ahead of Sep 1 rather than gated on it** — see Shipped recently.
   - **Found + fixed in passing (8/8): a real committed secret.**
     `.env.example` had a live Firebase Admin private key + Blizzard client
     secret in plaintext since the initial commit. Repo is private
@@ -336,12 +337,12 @@ companion (`C:\dev\arena-armory-desktop`), and the web app / API
       **This closes every item in the original 8/8 Ironforge parity
       plan's P1 phase** (leaderboard pages, header search, rating-chart
       ranges, ladder-history layer) — all shipped same-day. Snapshot
-      cadence: daily is fine for the S2 archive window; **from Sep 1 run
-      every 2–4h** (Ironforge updates multiple times/day — intra-day
-      diffs also power movers/activity feeds; the doc-id-guessing scheme
-      in both the pointer cron and this ladder-history walk-back will
-      need revisiting for intra-day granularity at that point, flagged
-      in `api/_lib/ladderHistory.ts`).
+      cadence: ~~daily is fine for the S2 archive window; from Sep 1 run
+      every 2–4h~~ **done 2026-08-29, every 3h, ahead of Sep 1** — the
+      doc-id-guessing scheme in both the pointer cron and this
+      ladder-history walk-back was revisited as flagged (new
+      `leaderboardDailyIndex` collection keeps the walk-back working at
+      intra-day granularity) — see Shipped recently.
   - **P2, early S3:**
     - **Homepage ladder top-5 + latest-news teaser — SHIPPED AND LIVE
       2026-08-08.** "Search front and center, ladder top-5 per bracket,
@@ -372,9 +373,37 @@ companion (`C:\dev\arena-armory-desktop`), and the web app / API
       moment a second real snapshot exists. **Participation stats**
       (active rated players per realm/bracket/week) similarly needs
       real week-over-week trend data that doesn't exist yet at 1-2 days
-      in. **`/seasons/tbc-s2` archive page + auto-freeze future
-      seasons** needs the season to have actually ended (Aug 18) —
-      building the page now would have nothing real to freeze.
+      in.
+    - **`/seasons/tbc-s2` archive page + auto-freeze future seasons —
+      SHIPPED AND LIVE 2026-08-29.** This block's original assumption
+      ("needs the season to have actually ended, Aug 18") turned out
+      wrong when checked live against Firestore the same session:
+      Blizzard's `current_season` API still reported 2 on 8/29, 11 days
+      past the community-facing "Season 2 ends Aug 18" date — the ladder
+      keeps updating under season 2 until Season 3 actually starts
+      (Sep 1). So the page had to handle both states, not just "final."
+      Built a real auto-freeze mechanism instead of waiting: the
+      leaderboard-snapshot cron now detects a season rollover
+      (`pointer.season !== the newly fetched season`) and copies that
+      bracket's last snapshot into a new `leaderboardSeasonFinal`
+      Firestore collection, once, idempotently, the first run that
+      observes it — no manual step, no redeploy needed when Season 3
+      actually starts. `/seasons/tbc-s2` reads that frozen doc when it
+      exists, falling back to today's live snapshot otherwise, so it
+      correctly shows "Season 2 is still in progress" today and will
+      flip to "final" automatically. New `GET /api/seasons/:slug`
+      combines standings + title cutoffs (reusing `computeTitleCutoffs`)
+      into one paginated, name-searchable response; future seasons only
+      need a one-line slug→season-id addition to `data/seasons.ts` — the
+      freezing itself is automatic. Cross-linked from `/leaderboards` and
+      the Season 2→3 transition guide's "Titles & rewards" section (which
+      previously said cutoffs were unknown for Anniversary — not anymore).
+      Verified against real production Firestore data (not fixtures): the
+      static export served locally against the real API, live in-browser
+      (correct "Live" banner, real official 2v2 vs 3v3 cutoffs, bracket-tab
+      refetching, unknown-slug not-found state), server-side name search
+      confirmed via curl. `tsc --noEmit` and a full `vercel build` both
+      clean.
   - **P3:** comp winrate/duration meta dashboard (the true differentiator,
     addon-data-powered) — **gated on data density**, precomputed aggregates,
     n≥50 per displayed cut, sample sizes labeled. 8/7 reality: 303 addon
@@ -454,12 +483,20 @@ companion (`C:\dev\arena-armory-desktop`), and the web app / API
     percentile benchmarks) requires exactly this ladder ingest — P0 doubles as
     the premium tier's data prerequisite.
   - **Alex decisions needed:** ~~trigger the AdSense re-review~~ **done —
-    triggered, currently in Google's review queue as of 2026-08-09**;
+    triggered, then explicitly deprioritized 2026-08-14 (Alex: stop chasing
+    it entirely) — see Shipped recently, 8/29**;
     density-threshold sign-off (re-summarized 2026-08-09: n≥50 real matches
     per displayed cut — still blocked on data, not a decision, see Shipped
     recently); ~~rotate the Firebase service-account key~~ **done
     2026-08-09** (see Shipped recently). ~~confirm Aug 14 carve-in~~ moot —
-    confirmed on the spot 8/8, freeze overruled for this repo.
+    confirmed on the spot 8/8, freeze overruled for this repo. ~~rotate the
+    Blizzard client secret~~ **done 2026-08-29** — new secret generated on
+    the Battle.net dev portal, set in Vercel production, verified live
+    against real Blizzard-backed endpoints post-redeploy (see Shipped
+    recently). Note: Battle.net's portal shows the old secret staying valid
+    until 2029 (a long grace window, not instant revocation like Firebase's
+    key deletion) — accepted as low-risk since the repo's always been
+    private, not a confirmed live leak.
 - **Phase 3 — remaining toward Sep 1** (Anniversary dates from
   [Blizzard](https://news.blizzard.com/en-us/article/24291476/bcc-anniversary-edition-black-temple-arrives-august-27)):
   - **Aug 18** — Arena Season 2 ends (weekly restarts); leftover AP → honor (1:10).
@@ -472,6 +509,46 @@ companion (`C:\dev\arena-armory-desktop`), and the web app / API
   - **Done:** `tbc-p3` **PvE** BT/Hyjal polish — boss-specific BiS sources
     + deeper PvE guides (races/professions). Site default still flips to
     `tbc-p3` on Sep 1 (not Aug 27).
+  - **Done 2026-08-29: the auto-flip itself, verified for real.** `CURRENT_PHASE`
+    was a build-time-frozen constant read directly by 4 pages
+    (`UpgradesPanel`, `guides/index`, `comps/index`, `comps/[bracket]/[slug]`)
+    — a visitor loading any of them between the real Sep 1 flip and the next
+    deploy would have hydrated against stale `tbc-p2` markup while the client
+    computed `tbc-p3`, the same React #418 mismatch class already hit twice
+    before (narrow-screen header, character-page loading label). Reproduced
+    it for real: built the static export, spoofed the browser clock past
+    Sep 1, watched it throw. Fixed with a `useCurrentPhase()` hook mirroring
+    the proven `useIsNarrowScreen` pattern (build default until mount, then
+    correct); re-verified clean against the same spoofed-clock repro.
+  - **Done 2026-08-29: `/leaderboards` noindex dropped, added to sitemap.**
+    The gate was still citing "AdSense re-review" in code even though Alex's
+    2026-08-14 call was to stop chasing AdSense entirely — the decision
+    never made it into the code. Now indexable on its own merits, matching
+    what 8/14 actually said.
+  - **Done 2026-08-29: snapshot cadence tightened to every 3h** (was
+    `0 9 * * *` daily). Confirmed via the Vercel API this project is on the
+    **Pro** plan, so the once-daily cron cap some plans have was never the
+    real blocker — the actual blocker was the Firestore doc-id scheme
+    (date-only, so same-day reruns would've clobbered each other). Snapshot
+    doc ids now carry an hour slot; a new `leaderboardDailyIndex` doc keeps
+    `ladderHistory.ts`'s 30-day walk-back working unchanged. `demographics-snapshot`
+    deliberately stays daily (expensive per-character crawl, already once
+    rate-limited by Blizzard — no reason to run it more often).
+  - **Done 2026-08-29: a real pre-existing bug found and fixed in passing** —
+    Vercel's per-function build-time TypeScript check (a vendored ts-node-style
+    checker inside `@vercel/node`, separate from the project's own `tsc`) was
+    printing real-looking errors in `api/account/profile.ts` /
+    `api/contribute.ts` on every deploy. Not a real bug (`tsc --noEmit` was
+    always clean on these files; TS erasure means it never affected runtime
+    behavior) — root-caused by reproducing the Vercel build locally and
+    bisecting: `if (!result.ok)` fails to narrow in that specific checker,
+    `if (result.ok === false)` narrows correctly. Rewrote the 4 affected
+    checks; a fresh `vercel build` now returns clean with zero diagnostics.
+  - **Done 2026-08-29: `/seasons/tbc-s2` archive page** — see the Ironforge
+    parity block above (P2) for the full writeup; it was P2's last unbuilt
+    piece.
+  - **Done 2026-08-29: Blizzard client secret rotated** — see "Alex decisions
+    needed" above.
 - **Party chat callouts — majors only** - **Shipped** addon v1.7.1: no
   self-chat spam; party only for trinket / drinking / walls / lust /
   innervate / grounding / NS / mana tide / res. CC and noisy CDs stay
@@ -609,6 +686,40 @@ companion (`C:\dev\arena-armory-desktop`), and the web app / API
   Direction call is Alex's; nothing scoped or built past the spike.
 
 ## Shipped recently
+
+- **Sep 1 Season 3 readiness pass, 2026-08-29 (wow-classic-armory) — full
+  session, 5 commits, all pushed and live.** Alex asked for the "Phase 3 —
+  remaining toward Sep 1" list to be verified and worked, 3 days out.
+  Summary (full detail inline in the relevant sections above):
+  - Found and fixed a real latent bug in the Season 2→3 auto-flip
+    (`CURRENT_PHASE` frozen at build time on 4 pages → hydration mismatch
+    risk right at the moment of peak S3 traffic) — reproduced with a
+    clock-spoofed static-export test before and after the fix.
+  - Dropped the stale `noindex` gate on `/leaderboards` (the AdSense
+    decision behind it was made 8/14 but never reached the code) and added
+    it to the sitemap.
+  - Tightened the leaderboard snapshot cron from daily to every 3h ahead of
+    the traffic spike — confirmed the Vercel plan (Pro) was never the
+    blocker, the Firestore doc-id scheme was; redesigned it for intra-day
+    granularity without breaking the existing 30-day ladder-history
+    walk-back.
+  - Root-caused and fixed a false-positive in Vercel's per-function
+    TypeScript build check (distinct from the project's own clean `tsc`) —
+    a real pre-existing issue, unrelated to this session's other work,
+    found by reading the build log.
+  - Built `/seasons/tbc-s2`, the last unbuilt piece of the 8/8 Ironforge
+    parity plan, with a real auto-freeze mechanism for future seasons
+    instead of a one-off — live-checked Firestore first and found Season 2
+    hadn't actually ended yet (Blizzard's `current_season` still read 2),
+    so the page had to handle both "still live" and "frozen" states.
+  - Rotated `BLIZZARD_CLIENT_SECRET` (new secret on the Battle.net dev
+    portal, set in Vercel production, redeployed, verified live against
+    real Blizzard-backed endpoints) — closes the last open half of the
+    8/8 committed-secret finding (Firebase was rotated 8/9; this was the
+    half that got left unrotated at the time).
+  Every deploy verified live against production (Vercel API + direct
+  `curl` checks against arenaarmory.com), not just locally. `tsc --noEmit`
+  and a full `vercel build` clean at every step.
 
 - **Addon bug fix: voice/callout system firing nonsense "arena N" alerts in
   Battlegrounds, 2026-08-24.** Alex reported real BG matches producing
