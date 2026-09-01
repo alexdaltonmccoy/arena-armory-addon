@@ -687,6 +687,29 @@ companion (`C:\dev\arena-armory-desktop`), and the web app / API
 
 ## Shipped recently
 
+- **OG image + Twitter card fix, 2026-09-01 (wow-classic-armory) — arenaarmory.com link
+  previews were rendering the tiny square favicon instead of a real card.** Filed cross-repo
+  in rebbel-v2's UX_AUDIT_RANKED_SPEC as the "DOGFOOD-SITE META PASS" (title/description/
+  canonical here were already fine — this repo has had a proper `app/+html.tsx` +
+  `lib/seo.tsx` `PageMeta` component all along; only `og:image` and `twitter:card` were
+  wrong). Root cause: `og:image` pointed at `${SITE}/favicon.png` (a small square icon, not a
+  1200x630 card) and `twitter:card` was `"summary"` (small thumbnail) instead of
+  `"summary_large_image"` — in all three places tags get rendered: `lib/seo.tsx`'s static
+  `PageMeta`, `lib/useWebMeta.ts`'s client-side imperative fallback (used on
+  character/guild/profile pages to avoid a React hydration error), and
+  `api/matches/og/[guid].ts` (the crawler-only per-match unfurl shim). Added
+  `public/og-image.png` (1200x630 — the existing gold/maroon "ARENA ARMORY" banner with the
+  shield/helmet mark already baked in, no compositing needed) and switched all three files to
+  it, with `twitter:card` now `summary_large_image` everywhere. **Verified**: local
+  `expo export --platform web` then grepped `dist/index.html` for both tags; pushed to
+  `master` (deploys on push), then re-verified against production — `curl`'d the live raw
+  HTML, then re-scraped via LinkedIn Post Inspector (correct title/description/image pulled)
+  and Facebook Sharing Debugger (`Scrape Again` confirmed `og:image` now `/og-image.png` and
+  `twitter:card` now `summary_large_image`; only remaining complaint is a pre-existing missing
+  `fb:app_id`, out of scope). Sobermaxx's side of this same cross-repo item (which needed a
+  full `+html.tsx` built from scratch, a bigger gap) shipped the same session — see
+  `sobermaxx-app/docs/ROADMAP.md`.
+
 - **Sep 1 Season 3 readiness pass, 2026-08-29 (wow-classic-armory) — full
   session, 5 commits, all pushed and live.** Alex asked for the "Phase 3 —
   remaining toward Sep 1" list to be verified and worked, 3 days out.
