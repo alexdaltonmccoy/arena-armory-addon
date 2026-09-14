@@ -687,6 +687,38 @@ companion (`C:\dev\arena-armory-desktop`), and the web app / API
 
 ## Shipped recently
 
+- **v1.9.2, 2026-09-14 — arena freeze investigation (Alex's own reports of lag/casting
+  delays in arena) methodically ruled the addon out, plus real bugs found and fixed along
+  the way.** Alex reported frequent lag spikes/freezes specific to arena (movement fine,
+  casting delayed/failing) and asked us to verify the addon wasn't the cause. Rather than
+  guess, read the actual event-handling code first: found `Auras`, `Announcer`, and
+  `SpecDetection` each independently registered `UNIT_AURA` and ran their own up-to-80-
+  pcall'd aura scan on every buff/debuff change — a real, confirmed inefficiency (worst
+  case: `SpecDetection:ScanFriendlyBuffs` had no "already known" guard, so it re-scanned a
+  teammate's buffs from scratch on every aura change for the rest of the match, forever).
+  Consolidated into one shared scan in `Core.lua` (`AA.ScanAuras` + `AA_UNIT_AURA`
+  message), added the missing guard. Also found and fixed a real crash:
+  `Frames:OnOpponentUpdate`/`OnUnitEvent` indexed `frames[i]` without a nil check —
+  reproduced live (12 errors firing right as Alex zoned into arena right after enabling
+  `scriptProfile` and relaunching, before this module's frame set existed yet). **Then
+  verified empirically, not just by code review**: walked Alex through Blizzard's built-in
+  addon CPU profiler (`/console scriptProfile 1` + `GetAddOnCPUUsage`/`UpdateAddOnCPUUsage`,
+  working around this client's `C_AddOns` API migration breaking the naive global calls) to
+  capture before/after CPU deltas around real skirmishes. Result across two matches with
+  confirmed full-screen freezes: **zero measurable CPU cost from ArenaArmory (or any of
+  Alex's ~98 other addons) in either match** — ruling addon Lua execution out as the cause
+  entirely, even after the aura-scan fix. Redirected the investigation to non-addon causes
+  (NVIDIA overlay, GPU driver ~4 months stale, background recording) rather than keep
+  chasing addon code once the data said to stop. Separately (unrelated to the freeze,
+  Alex-requested): added Nature's Grasp (spell 17329, verified against Wowhead TBC) to the
+  tracked-cooldown list, and capped local match history at 300 matches (`Recorder.lua`,
+  `table.insert` had no bound — `ArenaArmoryMatches.matches` grew forever; trims on login
+  and after every match, one-time chat notice on the first trim, full history unaffected on
+  arenaarmory.com since the desktop app already uploads everything). All changes verified
+  syntax-clean (`node .tools/check-lua.js`), live-tested in Alex's own AddOns folder across
+  several real skirmishes before release. Committed `59e413a`, tagged and released `v1.9.2`
+  via the GitHub Actions pipeline (CurseForge/Wago/GitHub Releases) — confirmed green.
+
 - **OG image + Twitter card fix, 2026-09-01 (wow-classic-armory) — arenaarmory.com link
   previews were rendering the tiny square favicon instead of a real card.** Filed cross-repo
   in rebbel-v2's UX_AUDIT_RANKED_SPEC as the "DOGFOOD-SITE META PASS" (title/description/
