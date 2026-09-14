@@ -44,6 +44,44 @@ function AA.GetAuraByIndex(unit, index, filter)
     return name, icon, count, dispelType, duration, expirationTime, source, spellId
 end
 
+-- Three separate modules (Auras, Announcer, SpecDetection) each used to
+-- scan independently on every UNIT_AURA fire -- up to 80 pcall'd API calls
+-- apiece, redundantly, on one of the hottest events in an arena fight. Scan
+-- once here and fan the results out so consumers just walk plain arrays.
+local FRIENDLY_AURA_UNITS = {
+    player = true, party1 = true, party2 = true, party3 = true, party4 = true,
+    raid1 = true, raid2 = true, raid3 = true, raid4 = true, raid5 = true,
+}
+
+function AA.IsTrackedAuraUnit(unit)
+    if not unit then return false end
+    if AA.ArenaIndex(unit) then return true end
+    return FRIENDLY_AURA_UNITS[unit] or false
+end
+
+function AA.ScanAuras(unit)
+    local helpful, harmful = {}, {}
+    for index = 1, 40 do
+        local name, icon, count, dispelType, duration, expirationTime, source, spellId =
+            AA.GetAuraByIndex(unit, index, "HELPFUL")
+        if not name then break end
+        helpful[#helpful + 1] = {
+            name = name, icon = icon, count = count, dispelType = dispelType,
+            duration = duration, expirationTime = expirationTime, source = source, spellId = spellId,
+        }
+    end
+    for index = 1, 40 do
+        local name, icon, count, dispelType, duration, expirationTime, source, spellId =
+            AA.GetAuraByIndex(unit, index, "HARMFUL")
+        if not name then break end
+        harmful[#harmful + 1] = {
+            name = name, icon = icon, count = count, dispelType = dispelType,
+            duration = duration, expirationTime = expirationTime, source = source, spellId = spellId,
+        }
+    end
+    return helpful, harmful
+end
+
 function AA.GetSpellTexture(spellId)
     if C_Spell and C_Spell.GetSpellTexture then
         return C_Spell.GetSpellTexture(spellId)
@@ -108,8 +146,16 @@ function addon:OnEnable()
     self:RegisterEvent("PLAYER_ENTERING_WORLD", "OnEnteringWorld")
     self:RegisterEvent("ARENA_OPPONENT_UPDATE", "OnArenaOpponentUpdate")
     self:RegisterEvent("COMBAT_LOG_EVENT_UNFILTERED", "OnCLEU")
+    self:RegisterEvent("UNIT_AURA", "OnUnitAura")
     -- Periodic GUID map refresh; arena units can appear without a discrete event.
     self.guidTimer = self:ScheduleRepeatingTimer("RefreshGuidMap", 1)
+end
+
+-- Single shared UNIT_AURA scan, fanned out to Auras/Announcer/SpecDetection.
+function addon:OnUnitAura(_, unit)
+    if not AA.IsTrackedAuraUnit(unit) then return end
+    local helpful, harmful = AA.ScanAuras(unit)
+    self:SendMessage("AA_UNIT_AURA", unit, helpful, harmful)
 end
 
 -- PLAYER_ENTERING_WORLD fires on every load screen, including arena->arena

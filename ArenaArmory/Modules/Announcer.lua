@@ -290,16 +290,14 @@ function Announcer:OnCLEU(_, _, subevent, sourceGUID, sourceName, sourceFlags, _
     self:TryAnnounceSpell(spellId, "CLEU")
 end
 
-function Announcer:OnUnitAura(_, unit)
+function Announcer:OnUnitAura(_, unit, helpful)
     if not AA.inArena then return end
     local i = AA.ArenaIndex(unit)
     if not i or not AA.db.profile.announcer.drink then return end
 
     local drinking = false
-    for index = 1, 40 do
-        local name, _, _, _, _, _, _, spellId = AA.GetAuraByIndex(unit, index, "HELPFUL")
-        if not name then break end
-        if (spellId and AA.DRINK_AURAS[spellId]) or name == AA.DRINK_NAME then
+    for _, aura in ipairs(helpful) do
+        if (aura.spellId and AA.DRINK_AURAS[aura.spellId]) or aura.name == AA.DRINK_NAME then
             drinking = true
             break
         end
@@ -381,8 +379,8 @@ function Announcer:OnEnable()
     self:RegisterMessage("AA_TRINKET_USED", "OnTrinketUsed")
     self:RegisterMessage("AA_CLEU", "OnCLEU")
     self:RegisterMessage("AA_ARENA_JOINED", "Reset")
+    self:RegisterMessage("AA_UNIT_AURA", "OnUnitAura")
     self:RegisterEvent("UNIT_SPELLCAST_START", "OnCastStart")
-    self:RegisterEvent("UNIT_AURA", "OnUnitAura")
     self:RegisterEvent("UNIT_HEALTH", "OnUnitHealth")
     self:RegisterEvent("VOICE_CHAT_TTS_SPEAK_TEXT_UPDATE", "OnTtsUpdate")
 end

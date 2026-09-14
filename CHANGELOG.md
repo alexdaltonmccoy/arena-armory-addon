@@ -1,5 +1,19 @@
 # Changelog
 
+## v1.9.2 (2026-09-14)
+- Performance: buff/debuff scanning for aura icons, drink detection, and
+  spec detection used to run independently on every aura change - now they
+  share a single scan, cutting redundant work on one of the busiest events
+  in a fight.
+- Fixed spec detection continuing to re-scan a teammate's buffs for the
+  rest of the match even after their spec was already identified.
+- Fixed a rare error right as you zone into an arena immediately after a
+  reload or login, before enemy frames had finished setting up.
+- Local match history is now capped at your most recent 300 matches to
+  keep the addon's memory footprint from growing indefinitely. Your full
+  history is unaffected on arenaarmory.com.
+- New: Nature's Grasp is now tracked as a cooldown.
+
 ## v1.9.1 (2026-08-24)
 - Fixed the voice/callout system (trinket, casts, drinking, low health)
   sometimes announcing nonsense "Enemy N" alerts during Battlegrounds. Those

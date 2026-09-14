@@ -29,32 +29,37 @@ function SpecDetection:OnEnable()
     self:RegisterMessage("AA_ARENA_JOINED", "Reset")
     -- Buff scanning catches most specs at the gates (forms, talent auras,
     -- shields) before a single spell is cast.
-    self:RegisterEvent("UNIT_AURA", "ScanBuffs")
+    self:RegisterMessage("AA_UNIT_AURA", "OnUnitAura")
     self:RegisterMessage("AA_OPPONENT_UPDATE", "OnOpponentUpdate")
 end
 
 function SpecDetection:OnOpponentUpdate(_, unit)
-    self:ScanBuffs(nil, unit)
+    local helpful = AA.ScanAuras(unit)
+    self:ScanBuffs(unit, helpful)
 end
 
-function SpecDetection:ScanBuffs(_, unit)
+function SpecDetection:OnUnitAura(_, unit, helpful)
     if not AA.db.profile.specDetection.enabled then return end
     if IsFriendlyArenaUnit(unit) then
-        self:ScanFriendlyBuffs(unit)
+        self:ScanFriendlyBuffs(unit, helpful)
         return
     end
+    self:ScanBuffs(unit, helpful)
+end
+
+function SpecDetection:ScanBuffs(unit, helpful)
+    if not AA.db.profile.specDetection.enabled then return end
     local i = AA.ArenaIndex(unit)
     if not i or AA.detectedSpecs[i] then return end
 
-    for index = 1, 40 do
-        local name, _, _, _, _, _, source, spellId = AA.GetAuraByIndex(unit, index, "HELPFUL")
-        if not name then break end
-        local info = spellId and AA.SPEC_BUFFS[spellId]
+    for _, aura in ipairs(helpful) do
+        local info = aura.spellId and AA.SPEC_BUFFS[aura.spellId]
         if info then
             -- Party-wide auras (Trueshot Aura, Earth Shield, Leader of the
             -- Pack) sit on teammates: attribute to the aura's caster when
             -- known, otherwise to the scanned unit - and only when the
             -- class matches, so a buffed teammate is never mislabeled.
+            local source = aura.source
             local target = (source and AA.ArenaIndex(source)) and source or unit
             local ti = AA.ArenaIndex(target)
             local _, classToken = UnitClass(target)
@@ -66,14 +71,18 @@ function SpecDetection:ScanBuffs(_, unit)
     end
 end
 
-function SpecDetection:ScanFriendlyBuffs(unit)
+function SpecDetection:ScanFriendlyBuffs(unit, helpful)
     if not AA.inArena or not UnitExists(unit) then return end
-    for index = 1, 40 do
-        local name, _, _, _, _, _, source, spellId = AA.GetAuraByIndex(unit, index, "HELPFUL")
-        if not name then break end
-        local info = spellId and AA.SPEC_BUFFS[spellId]
+    -- Already known: stop re-scanning this teammate's buffs on every future
+    -- UNIT_AURA fire (procs/HoTs churn constantly for the rest of the match).
+    local name = AA.StripRealm(UnitName(unit))
+    if name and AA.friendlySpecs[name] then return end
+
+    for _, aura in ipairs(helpful) do
+        local info = aura.spellId and AA.SPEC_BUFFS[aura.spellId]
         if info then
             -- Same caster-attribution rule as the enemy path.
+            local source = aura.source
             local target = (source and IsFriendlyArenaUnit(source)) and source or unit
             local _, classToken = UnitClass(target)
             if classToken == info.class then
@@ -98,7 +107,10 @@ function SpecDetection:Reset()
     end
     -- Catch talent auras/forms already up at the gates.
     for _, unit in ipairs(FRIENDLY_UNITS) do
-        if UnitExists(unit) then self:ScanFriendlyBuffs(unit) end
+        if UnitExists(unit) then
+            local helpful = AA.ScanAuras(unit)
+            self:ScanFriendlyBuffs(unit, helpful)
+        end
     end
 end
 

@@ -602,7 +602,10 @@ end
 
 function Frames:OnOpponentUpdate(_, unit)
     local i = AA.ArenaIndex(unit)
-    if i then
+    -- ARENA_OPPONENT_UPDATE can fire in a burst right as you zone in, before
+    -- this module's own frame set exists yet (e.g. reloading straight into
+    -- an arena) - frames[i] may not be populated for a moment.
+    if i and frames[i] then
         self:UpdateUnit(frames[i])
     end
 end
@@ -645,7 +648,7 @@ end
 
 function Frames:OnUnitEvent(_, unit)
     local i = AA.ArenaIndex(unit)
-    if i then
+    if i and frames[i] then
         self:UpdateUnit(frames[i])
     end
 end

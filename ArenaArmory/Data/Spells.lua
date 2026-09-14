@@ -97,6 +97,7 @@ AA.COOLDOWN_SPELLS = {
     [17116] = { cd = 180, class = "DRUID" }, -- Nature's Swiftness
     [22812] = { cd = 60,  class = "DRUID" }, -- Barkskin
     [29166] = { cd = 360, class = "DRUID" }, -- Innervate
+    [17329] = { cd = 60,  class = "DRUID" }, -- Nature's Grasp
 }
 
 -------------------------------------------------------------------------------

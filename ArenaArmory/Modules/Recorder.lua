@@ -21,6 +21,26 @@ local SCHEMA_VERSION = 4
 -- Bounds SavedVariables growth on very long/chaotic matches.
 local MAX_EVENTS = 400
 
+-- Bounds how much match history sits in memory/SavedVariables long-term.
+-- The desktop app already uploads every match to arenaarmory.com as it's
+-- recorded, so local history beyond this is pure redundant memory weight.
+local MAX_MATCHES = 300
+
+-- Drops the oldest matches (list is oldest-first, appended to on each match)
+-- down to MAX_MATCHES. Rebuilds rather than repeated table.remove(list, 1)
+-- so a large one-time trim at login doesn't shift the whole array per removal.
+local function TrimMatches(list)
+    local n = #list
+    if n <= MAX_MATCHES then return 0 end
+    local trimmed = {}
+    for i = n - MAX_MATCHES + 1, n do
+        trimmed[#trimmed + 1] = list[i]
+    end
+    for i = 1, MAX_MATCHES do list[i] = trimmed[i] end
+    for i = MAX_MATCHES + 1, n do list[i] = nil end
+    return n - MAX_MATCHES
+end
+
 -- Damage/healing timeline resolution and cap (120 buckets = 20 minutes).
 local TIMELINE_STEP = 10
 local MAX_BUCKETS = 120
@@ -833,6 +853,7 @@ function Recorder:Finalize(winner)
     current.bracket = math.max(current.bracket or 1, #current.team, #enemies)
 
     table.insert(ArenaArmoryMatches.matches, current)
+    TrimMatches(ArenaArmoryMatches.matches)
     addon:Print(("Match recorded: %s (%s). %d matches stored. View your history at %s")
         :format(current.map or "?", current.result or "?", #ArenaArmoryMatches.matches,
             AA.MatchesChatLink and AA.MatchesChatLink() or "arenaarmory.com"))
@@ -1007,6 +1028,11 @@ function Recorder:OnInitialize()
     ArenaArmoryMatches.schemaVersion = SCHEMA_VERSION
     ArenaArmoryMatches.matches = ArenaArmoryMatches.matches or {}
     ArenaArmoryMatches.character = ArenaArmoryMatches.character or {}
+
+    local dropped = TrimMatches(ArenaArmoryMatches.matches)
+    if dropped > 0 then
+        addon:Print(("Trimmed %d old local match record(s) to keep the last %d - your full history is still on arenaarmory.com."):format(dropped, MAX_MATCHES))
+    end
 end
 
 function Recorder:OnEnable()
