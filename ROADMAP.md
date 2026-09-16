@@ -687,6 +687,32 @@ companion (`C:\dev\arena-armory-desktop`), and the web app / API
 
 ## Shipped recently
 
+- **Android production access applied for, 2026-09-15 (wow-classic-armory /
+  Arena Armory mobile app).** All three closed-test gates (published release,
+  12+ opted-in testers, 14+ continuous days) confirmed satisfied on the Play
+  Console dashboard. Submitted the "Apply for production" questionnaire (10
+  questions across closed test / app / readiness) with answers written from
+  what actually happened, not Testers Community's vendor-supplied draft
+  answers — per the 8/14 decision (this file, "Android closed testing,
+  2026-08-14/15" entry) not to submit those, since they contained false
+  claims (direct outreach to WoW players that never happened, an onboarding
+  walkthrough that was never built, feedback "via surveys" that was actually
+  a vendor PDF). Cross-checked Google's own Android vitals crash/ANR data
+  first (showed "Data unavailable" — closed-test volume is too low for Play
+  to compute it, so no independent telemetry exists beyond what we verified
+  ourselves) before writing the readiness answer. Key honest points
+  submitted: testers were recruited via a paid provider (Testers Community)
+  and mainly served as opt-in accounts for the gate, not a real engagement/
+  QA signal; the one checkable vendor claim (Play short description lacked
+  keywords) was true and already fixed (wrong copy — the iOS subtitle — had
+  been pasted into the Play short-description field); the real bug found and
+  fixed was the Aug 2026 launch-crash config bug, root-caused and shipped
+  in a corrected build without resetting the tester clock; readiness was
+  confirmed via the Play Developer API (build live) plus a real Android
+  device install/smoke test. Expected first-year installs answered
+  conservatively (0-10K) given no paid UA budget yet. Applied via Play
+  Console; Google's stated review window is 7 days or less. Nothing else
+  required on our end until Google's decision email.
 - **v1.9.2, 2026-09-14 — arena freeze investigation (Alex's own reports of lag/casting
   delays in arena) methodically ruled the addon out, plus real bugs found and fixed along
   the way.** Alex reported frequent lag spikes/freezes specific to arena (movement fine,
