@@ -75,8 +75,8 @@ local function ApplyAllTestData()
         end
         if AA.Cooldowns and AA.db.profile.cooldowns.enabled then
             AA.Cooldowns:Track(i, 42292, 120)
-            AA.Cooldowns:Track(i, ({6552, 10308, 19503, 38768, 10890})[i] or 6552,
-                ({10, 60, 30, 10, 30})[i] or 30)
+            -- Max-rank IDs; durations come from AA.COOLDOWN_DEFS (talent-aware).
+            AA.Cooldowns:Track(i, ({25275, 10308, 14311, 8643, 10890})[i] or 6554)
         end
     end
 end

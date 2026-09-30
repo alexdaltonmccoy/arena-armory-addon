@@ -1,5 +1,35 @@
 # Changelog
 
+## Unreleased
+- Fixed the enemy cooldown tracker missing most level-70 casts: several
+  abilities were only recognized by their rank 1 spell, so max-rank Intercept,
+  Charge, Pummel, Divine Shield, Nature's Grasp, Death Coil and more never
+  showed up. Every rank of every tracked ability now counts.
+- Cooldown timers are now talent-aware: Intercept, Divine Shield, Blessing of
+  Protection, Hammer of Justice, traps, Blind, Vanish, Sprint, Evasion, Ice
+  Block, Cold Snap, Frost Nova, Psychic Scream and Grounding Totem use the
+  shorter talented cooldown unless the enemy's detected spec can't have the
+  talent. A faster-than-possible recast also switches that enemy to the
+  talented timer.
+- Readiness, Preparation and Cold Snap now reset the cooldowns they refresh.
+  Freezing Trap and Frost Trap share one icon and timer, like in game.
+- New tracked cooldowns: Kidney Shot, Wyvern Sting, Viper Sting, Shield Bash,
+  Intervene, Disarm, Concussion Blow, Divine Protection, Blessing of
+  Sacrifice, Divine Favor, Divine Illumination, Feign Death, Shadowstep,
+  Premeditation, Inner Focus, Mana Tide, Frost Nova, Dragon's Breath,
+  Invisibility, Water Elemental, Maim, Force of Nature, and racials (War
+  Stomp, Arcane Torrent, Stoneform, Escape Artist).
+- Felhunter Spell Lock (and other pet casts) now show on the warlock's frame
+  and trigger callouts; Succubus Seduction callouts work again.
+- Stealth openers are no longer missed: Cheap Shot, Sap and Kidney Shot
+  callouts fire even before the rogue appears on your frames, and their
+  cooldowns fill in as soon as they do.
+- New callouts: Nature's Grasp, Viper Sting, Maim, Disarm, Inner Focus,
+  Invisibility, and "Trapped" when a teammate is caught in a Freezing Trap.
+- Fixed the Freezing Trap icon overlay (it watched the trap cast instead of
+  the freeze), and added Intercept, Maim and rank 1 Kidney Shot stuns plus all
+  Wyvern Sting ranks to the overlay.
+
 ## v1.9.2 (2026-09-14)
 - Performance: buff/debuff scanning for aura icons, drink detection, and
   spec detection used to run independently on every aura change - now they

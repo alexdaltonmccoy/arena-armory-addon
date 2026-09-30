@@ -249,7 +249,8 @@ function Announcer:OnCastStart(_, unit, _, spellId)
     -- one (e.g. a Battleground) they can still resolve to stale/leftover
     -- data, producing nonsense "arena N" callouts.
     if not AA.inArena then return end
-    local i = AA.ArenaIndex(unit)
+    -- arenapetN covers Succubus Seduction (a cast-time pet spell).
+    local i = AA.ArenaIndex(unit) or (unit and tonumber(unit:match("^arenapet(%d)$")))
     if not i then return end
 
     if self:TryAnnounceSpell(spellId, "CAST_START") then return end
@@ -260,11 +261,27 @@ function Announcer:OnCastStart(_, unit, _, spellId)
     end
 end
 
-function Announcer:OnCLEU(_, _, subevent, sourceGUID, sourceName, sourceFlags, _, _, _, spellId)
+local function IsFriendlyPlayerFlag(flags)
+    if not flags then return false end
+    return bit.band(flags, COMBATLOG_OBJECT_REACTION_FRIENDLY) > 0
+        and bit.band(flags, COMBATLOG_OBJECT_TYPE_PLAYER) > 0
+end
+
+function Announcer:OnCLEU(_, _, subevent, sourceGUID, sourceName, sourceFlags,
+                          _, _, destFlags, spellId)
+    -- Debuffs landing on OUR team that deserve a callout (Freezing Trap
+    -- triggering on a teammate - the trap drop itself is the cast below).
+    if subevent == "SPELL_AURA_APPLIED" then
+        local key = AA.inArena and spellId and AA.ANNOUNCE_FRIENDLY_DEBUFFS[spellId]
+        if key and IsFriendlyPlayerFlag(destFlags) and AA.db.profile.announcer.casts ~= false then
+            self:Announce(key)
+        end
+        return
+    end
     if subevent ~= "SPELL_CAST_SUCCESS" then return end
 
     local entry = spellId and AA.ANNOUNCE_SPELLS and AA.ANNOUNCE_SPELLS[spellId]
-    local unit = AA.UnitByGUID(sourceGUID)
+    local unit = AA.UnitByGUIDOrPet(sourceGUID)
     local hostile = AA.IsHostilePlayerFlag and AA.IsHostilePlayerFlag(sourceFlags)
 
     if self.debug and (entry or unit) then
@@ -275,7 +292,7 @@ function Announcer:OnCLEU(_, _, subevent, sourceGUID, sourceName, sourceFlags, _
     end
 
     if self.debug and entry and not unit and AA.inArena and hostile then
-        self:DebugPrint(("MISS: %s from %s not in guid map"):format(
+        self:DebugPrint(("%s from %s not in guid map yet (stealth opener) - announcing anyway"):format(
             entry.sound, tostring(sourceName)))
     end
 
@@ -286,7 +303,10 @@ function Announcer:OnCLEU(_, _, subevent, sourceGUID, sourceName, sourceFlags, _
         end
         return
     end
-    if not unit then return end
+    -- Every hostile player in an arena is an opponent, so an unmapped GUID
+    -- is still worth announcing: a rogue's Cheap Shot/Sap -> Kidney opener
+    -- lands before arenaN exists for them.
+    if not unit and not (AA.inArena and hostile) then return end
     self:TryAnnounceSpell(spellId, "CLEU")
 end
 

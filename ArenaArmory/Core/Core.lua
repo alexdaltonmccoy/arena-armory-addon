@@ -23,6 +23,7 @@ AA.isFreshInstall = (_G.ArenaArmoryDB == nil)
 AA.inArena = false
 AA.testMode = false
 AA.guidToUnit = {}   -- enemy GUID -> "arenaN"
+AA.petGuidToUnit = {} -- enemy pet GUID -> owner's "arenaN" (Spell Lock, Seduction)
 AA.unitClass = {}    -- "arenaN" -> classToken (cached, survives unit blips)
 
 -------------------------------------------------------------------------------
@@ -172,6 +173,7 @@ function addon:OnEnteringWorld(_, _, isReloadingUi)
             self:SendMessage("AA_ARENA_LEFT")
         end
         wipe(AA.guidToUnit)
+        wipe(AA.petGuidToUnit)
         wipe(AA.unitClass)
         AA.inArena = true
         self:SendMessage("AA_ARENA_JOINED")
@@ -179,6 +181,7 @@ function addon:OnEnteringWorld(_, _, isReloadingUi)
         AA.inArena = false
         self:SendMessage("AA_ARENA_LEFT")
         wipe(AA.guidToUnit)
+        wipe(AA.petGuidToUnit)
         wipe(AA.unitClass)
     end
 
@@ -224,6 +227,8 @@ function addon:RefreshGuidMap()
                 self:SendMessage("AA_OPPONENT_UPDATE", unit, "seen")
             end
         end
+        local petGuid = UnitExists("arenapet" .. i) and UnitGUID("arenapet" .. i)
+        if petGuid then AA.petGuidToUnit[petGuid] = unit end
     end
 end
 
@@ -239,6 +244,13 @@ end
 -- Returns "arenaN" for a hostile arena GUID, or nil.
 function AA.UnitByGUID(guid)
     return guid and AA.guidToUnit[guid] or nil
+end
+
+-- Like UnitByGUID, but an enemy pet's GUID resolves to its owner's "arenaN".
+-- Only for cast attribution (cooldowns/announcer) - never for DR, where a
+-- CC'd pet must not count against its owner.
+function AA.UnitByGUIDOrPet(guid)
+    return guid and (AA.guidToUnit[guid] or AA.petGuidToUnit[guid]) or nil
 end
 
 -- Returns 1-5 for "arenaN" unit tokens.

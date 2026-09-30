@@ -16,89 +16,184 @@ AA.RACIAL_CC_BREAKS = {
 }
 
 -------------------------------------------------------------------------------
--- Tracked enemy cooldowns: spellID -> { cd = seconds, class = classToken }
--- Shown as icon rows under each arena frame after first observed use.
+-- Tracked enemy cooldowns. Shown as icon rows under each arena frame after
+-- first observed use.
+--
+-- One entry per ability, covering EVERY rank: level-70 players cast max rank
+-- (Intercept r5 = 25275, Divine Shield r2 = 1020, Nature's Grasp r7 = 27009),
+-- and matching only one rank ID silently drops the cast. All rank IDs and
+-- talent-adjusted cooldowns verified against the wowhead TBC talent/spell
+-- dump in .tools/cache-wowhead-tbc-talents.js.
+--
+--   key        icon/cooldown identity; entries sharing a key share one icon
+--              and one cooldown (Freezing Trap + Frost Trap)
+--   ids        every rank's spell ID
+--   cd         base cooldown (seconds)
+--   talentCd   cooldown with the standard reduction talent. This is what we
+--              show unless the enemy's detected spec is listed in
+--              `untalented` - a deep talent in another tree that spec cannot
+--              reach. Unknown spec => talented (shorter) value, so the icon
+--              never claims a spell is down when it may already be back.
+--   resets     Readiness / Preparation / Cold Snap: finishes these keys'
+--              cooldowns ("HUNTER" = every other hunter entry).
+--   class      nil for racials (any class)
 -------------------------------------------------------------------------------
 
-AA.COOLDOWN_SPELLS = {
+local function Specs(...)
+    local t = {}
+    for i = 1, select("#", ...) do t[select(i, ...)] = true end
+    return t
+end
+
+AA.COOLDOWN_DEFS = {
     -- Warrior
-    [6552]  = { cd = 10,  class = "WARRIOR" }, -- Pummel
-    [20252] = { cd = 30,  class = "WARRIOR" }, -- Intercept
-    [23920] = { cd = 10,  class = "WARRIOR" }, -- Spell Reflection
-    [5246]  = { cd = 180, class = "WARRIOR" }, -- Intimidating Shout
-    [12292] = { cd = 180, class = "WARRIOR" }, -- Death Wish
-    [1719]  = { cd = 1800, class = "WARRIOR" }, -- Recklessness
-    [18499] = { cd = 30,  class = "WARRIOR" }, -- Berserker Rage
+    { key = "pummel", class = "WARRIOR", ids = { 6552, 6554 }, cd = 10 },
+    { key = "shieldbash", class = "WARRIOR", ids = { 72, 1671, 1672, 29704 }, cd = 12 },
+    -- Improved Intercept (Arms, 25-pt tier): 30s -> 20s.
+    { key = "intercept", class = "WARRIOR", ids = { 20252, 20616, 20617, 25272, 25275 },
+      cd = 30, talentCd = 20, untalented = Specs("Fury", "Protection") },
+    { key = "intervene", class = "WARRIOR", ids = { 3411 }, cd = 30 },
+    { key = "disarm", class = "WARRIOR", ids = { 676 }, cd = 60 },
+    { key = "spellreflection", class = "WARRIOR", ids = { 23920 }, cd = 10 },
+    { key = "intimidation", class = "WARRIOR", ids = { 5246 }, cd = 180 },
+    { key = "concussionblow", class = "WARRIOR", ids = { 12809 }, cd = 45 },
+    { key = "berserkerrage", class = "WARRIOR", ids = { 18499 }, cd = 30 },
+    { key = "deathwish", class = "WARRIOR", ids = { 12292 }, cd = 180 },
+    -- Improved Disciplines (Arms, 25-pt tier): 30 min -> 20 min.
+    { key = "recklessness", class = "WARRIOR", ids = { 1719 },
+      cd = 1800, talentCd = 1200, untalented = Specs("Fury", "Protection") },
 
     -- Paladin
-    [642]   = { cd = 300, class = "PALADIN" }, -- Divine Shield
-    [10278] = { cd = 180, class = "PALADIN" }, -- Blessing of Protection
-    [1044]  = { cd = 25,  class = "PALADIN" }, -- Blessing of Freedom
-    [10308] = { cd = 60,  class = "PALADIN" }, -- Hammer of Justice
-    [20066] = { cd = 60,  class = "PALADIN" }, -- Repentance
-    [31884] = { cd = 180, class = "PALADIN" }, -- Avenging Wrath
+    -- Sacred Duty (Protection, 25-pt tier): 5 min -> 4 min.
+    { key = "bubble", class = "PALADIN", ids = { 642, 1020 },
+      cd = 300, talentCd = 240, untalented = Specs("Holy", "Retribution") },
+    { key = "divineprotection", class = "PALADIN", ids = { 498, 5573 }, cd = 300 },
+    -- Guardian's Favor (Protection row 1, a routine Holy/Ret dip): 5 min -> 3 min.
+    { key = "bop", class = "PALADIN", ids = { 1022, 5599, 10278 }, cd = 300, talentCd = 180 },
+    { key = "freedom", class = "PALADIN", ids = { 1044 }, cd = 25 },
+    { key = "sacrifice", class = "PALADIN", ids = { 6940, 20729, 27147, 27148 }, cd = 30 },
+    -- Improved Hammer of Justice (Protection 15-pt tier, common dip): 60s -> 45s.
+    { key = "hammer", class = "PALADIN", ids = { 853, 5588, 5589, 10308 }, cd = 60, talentCd = 45 },
+    { key = "repentance", class = "PALADIN", ids = { 20066 }, cd = 60 },
+    { key = "avengingwrath", class = "PALADIN", ids = { 31884 }, cd = 180 },
+    { key = "divinefavor", class = "PALADIN", ids = { 20216 }, cd = 120 },
+    { key = "divineillumination", class = "PALADIN", ids = { 31842 }, cd = 180 },
 
     -- Hunter
-    [34490] = { cd = 20,  class = "HUNTER" }, -- Silencing Shot
-    [19503] = { cd = 30,  class = "HUNTER" }, -- Scatter Shot
-    [19263] = { cd = 300, class = "HUNTER" }, -- Deterrence
-    [14311] = { cd = 30,  class = "HUNTER" }, -- Freezing Trap
-    [19577] = { cd = 60,  class = "HUNTER" }, -- Intimidation
-    [23989] = { cd = 300, class = "HUNTER" }, -- Readiness
-    [34692] = { cd = 120, class = "HUNTER" }, -- The Beast Within
+    { key = "silencingshot", class = "HUNTER", ids = { 34490 }, cd = 20 },
+    { key = "scatter", class = "HUNTER", ids = { 19503 }, cd = 30 },
+    -- Freezing Trap and Frost Trap share one cooldown. Resourcefulness
+    -- (Survival, 25-pt tier): 30s -> 24s.
+    { key = "freezingtrap", class = "HUNTER", ids = { 1499, 14310, 14311 },
+      cd = 30, talentCd = 24, untalented = Specs("Beast Mastery", "Marksmanship") },
+    { key = "freezingtrap", class = "HUNTER", ids = { 13809 }, icon = 14311,
+      cd = 30, talentCd = 24, untalented = Specs("Beast Mastery", "Marksmanship") },
+    { key = "wyvern", class = "HUNTER", ids = { 19386, 24132, 24133, 27068 }, cd = 120 },
+    { key = "viper", class = "HUNTER", ids = { 3034, 14279, 14280, 27018 }, cd = 15 },
+    { key = "deterrence", class = "HUNTER", ids = { 19263 }, cd = 300 },
+    { key = "feigndeath", class = "HUNTER", ids = { 5384 }, cd = 30 },
+    { key = "petintimidation", class = "HUNTER", ids = { 19577 }, cd = 60 },
+    -- The cast is Bestial Wrath (19574); 34692 is the talent, never cast.
+    { key = "bestialwrath", class = "HUNTER", ids = { 19574 }, cd = 120 },
+    { key = "readiness", class = "HUNTER", ids = { 23989 }, cd = 300, resets = "HUNTER" },
 
     -- Rogue
-    [38768] = { cd = 10,  class = "ROGUE" }, -- Kick
-    [2094]  = { cd = 180, class = "ROGUE" }, -- Blind
-    [26889] = { cd = 300, class = "ROGUE" }, -- Vanish
-    [31224] = { cd = 60,  class = "ROGUE" }, -- Cloak of Shadows
-    [26669] = { cd = 300, class = "ROGUE" }, -- Evasion
-    [11305] = { cd = 300, class = "ROGUE" }, -- Sprint
-    [14185] = { cd = 600, class = "ROGUE" }, -- Preparation
-    [13750] = { cd = 300, class = "ROGUE" }, -- Adrenaline Rush
-    [14177] = { cd = 180, class = "ROGUE" }, -- Cold Blood
+    { key = "kick", class = "ROGUE", ids = { 1766, 1767, 1768, 1769, 38768 }, cd = 10 },
+    { key = "kidney", class = "ROGUE", ids = { 408, 8643 }, cd = 20 },
+    -- Elusiveness (Subtlety 15-pt tier, common dip): Blind 3m -> 1.5m, Vanish 5m -> 3.5m.
+    { key = "blind", class = "ROGUE", ids = { 2094 }, cd = 180, talentCd = 90 },
+    { key = "vanish", class = "ROGUE", ids = { 1856, 1857, 26889 }, cd = 300, talentCd = 210 },
+    { key = "cloak", class = "ROGUE", ids = { 31224 }, cd = 60 },
+    -- Endurance (Combat row 2, 5-pt tier): Sprint/Evasion 5m -> 3.5m.
+    { key = "evasion", class = "ROGUE", ids = { 5277, 26669 }, cd = 300, talentCd = 210 },
+    { key = "sprint", class = "ROGUE", ids = { 2983, 8696, 11305 }, cd = 300, talentCd = 210 },
+    { key = "shadowstep", class = "ROGUE", ids = { 36554 }, cd = 30 },
+    { key = "premeditation", class = "ROGUE", ids = { 14183 }, cd = 120 },
+    { key = "coldblood", class = "ROGUE", ids = { 14177 }, cd = 180 },
+    { key = "adrenalinerush", class = "ROGUE", ids = { 13750 }, cd = 300 },
+    { key = "preparation", class = "ROGUE", ids = { 14185 }, cd = 600,
+      resets = { "evasion", "sprint", "vanish", "coldblood", "shadowstep", "premeditation" } },
 
     -- Priest
-    [10890] = { cd = 30,  class = "PRIEST" }, -- Psychic Scream
-    [15487] = { cd = 45,  class = "PRIEST" }, -- Silence
-    [10060] = { cd = 180, class = "PRIEST" }, -- Power Infusion
-    [33206] = { cd = 120, class = "PRIEST" }, -- Pain Suppression
-    [6346]  = { cd = 180, class = "PRIEST" }, -- Fear Ward
-    [34433] = { cd = 300, class = "PRIEST" }, -- Shadowfiend
+    -- Improved Psychic Scream (Shadow row 2, common dip): 30s -> 26s.
+    { key = "psychicscream", class = "PRIEST", ids = { 8122, 8124, 10888, 10890 }, cd = 30, talentCd = 26 },
+    { key = "silence", class = "PRIEST", ids = { 15487 }, cd = 45 },
+    { key = "painsuppression", class = "PRIEST", ids = { 33206 }, cd = 120 },
+    { key = "powerinfusion", class = "PRIEST", ids = { 10060 }, cd = 180 },
+    { key = "innerfocus", class = "PRIEST", ids = { 14751 }, cd = 180 },
+    { key = "fearward", class = "PRIEST", ids = { 6346 }, cd = 180 },
+    { key = "shadowfiend", class = "PRIEST", ids = { 34433 }, cd = 300 },
 
     -- Shaman
-    [8177]  = { cd = 15,  class = "SHAMAN" }, -- Grounding Totem
-    [16188] = { cd = 180, class = "SHAMAN" }, -- Nature's Swiftness
-    [16166] = { cd = 180, class = "SHAMAN" }, -- Elemental Mastery
-    [30823] = { cd = 120, class = "SHAMAN" }, -- Shamanistic Rage
-    [2825]  = { cd = 600, class = "SHAMAN" }, -- Bloodlust
-    [32182] = { cd = 600, class = "SHAMAN" }, -- Heroism
+    -- Guardian Totems (Enhancement row 1): 15s -> 13s.
+    { key = "grounding", class = "SHAMAN", ids = { 8177 }, cd = 15, talentCd = 13 },
+    { key = "natureswiftness", class = "SHAMAN", ids = { 16188 }, cd = 180 },
+    { key = "manatide", class = "SHAMAN", ids = { 16190 }, cd = 300 },
+    { key = "elementalmastery", class = "SHAMAN", ids = { 16166 }, cd = 180 },
+    { key = "shamanisticrage", class = "SHAMAN", ids = { 30823 }, cd = 120 },
+    { key = "bloodlust", class = "SHAMAN", ids = { 2825 }, cd = 600 },
+    { key = "heroism", class = "SHAMAN", ids = { 32182 }, cd = 600 },
 
     -- Mage
-    [2139]  = { cd = 24,  class = "MAGE" }, -- Counterspell
-    [45438] = { cd = 300, class = "MAGE" }, -- Ice Block
-    [1953]  = { cd = 15,  class = "MAGE" }, -- Blink
-    [11958] = { cd = 480, class = "MAGE" }, -- Cold Snap
-    [12472] = { cd = 180, class = "MAGE" }, -- Icy Veins
-    [12043] = { cd = 180, class = "MAGE" }, -- Presence of Mind
-    [12042] = { cd = 180, class = "MAGE" }, -- Arcane Power
-    [11129] = { cd = 180, class = "MAGE" }, -- Combustion
+    { key = "counterspell", class = "MAGE", ids = { 2139 }, cd = 24 },
+    -- Ice Floes (Frost, 25-pt tier): -20%. Arcane/Frost hybrids reach it.
+    { key = "iceblock", class = "MAGE", ids = { 45438 }, cd = 300, talentCd = 240, untalented = Specs("Fire") },
+    { key = "coldsnap", class = "MAGE", ids = { 11958 }, cd = 480, talentCd = 384, untalented = Specs("Fire"),
+      resets = { "iceblock", "frostnova", "icyveins", "waterelemental" } },
+    -- Improved Frost Nova (Frost row 1): 25s -> 21s.
+    { key = "frostnova", class = "MAGE", ids = { 122, 865, 6131, 10230, 27088 }, cd = 25, talentCd = 21 },
+    { key = "blink", class = "MAGE", ids = { 1953 }, cd = 15 },
+    { key = "dragonsbreath", class = "MAGE", ids = { 31661, 33041, 33042, 33043 }, cd = 20 },
+    { key = "invisibility", class = "MAGE", ids = { 66 }, cd = 300 },
+    { key = "icyveins", class = "MAGE", ids = { 12472 }, cd = 180 },
+    { key = "waterelemental", class = "MAGE", ids = { 31687 }, cd = 180 },
+    { key = "presenceofmind", class = "MAGE", ids = { 12043 }, cd = 180 },
+    { key = "arcanepower", class = "MAGE", ids = { 12042 }, cd = 180 },
+    { key = "combustion", class = "MAGE", ids = { 11129 }, cd = 180 },
 
     -- Warlock
-    [19647] = { cd = 24,  class = "WARLOCK" }, -- Spell Lock (Felhunter)
-    [27223] = { cd = 120, class = "WARLOCK" }, -- Death Coil
-    [17928] = { cd = 40,  class = "WARLOCK" }, -- Howl of Terror
-    [30414] = { cd = 20,  class = "WARLOCK" }, -- Shadowfury
-    [18708] = { cd = 900, class = "WARLOCK" }, -- Fel Domination
+    -- Spell Lock is cast by the Felhunter: attributed to its owner via the
+    -- arenapetN GUID map (AA.UnitByGUIDOrPet).
+    { key = "spelllock", class = "WARLOCK", ids = { 19244, 19647 }, cd = 24 },
+    { key = "deathcoil", class = "WARLOCK", ids = { 6789, 17925, 17926, 27223 }, cd = 120 },
+    { key = "howl", class = "WARLOCK", ids = { 5484, 17928 }, cd = 40 },
+    { key = "shadowfury", class = "WARLOCK", ids = { 30283, 30413, 30414 }, cd = 20 },
+    { key = "feldomination", class = "WARLOCK", ids = { 18708 }, cd = 900 },
 
     -- Druid
-    [8983]  = { cd = 60,  class = "DRUID" }, -- Bash
-    [16979] = { cd = 15,  class = "DRUID" }, -- Feral Charge
-    [17116] = { cd = 180, class = "DRUID" }, -- Nature's Swiftness
-    [22812] = { cd = 60,  class = "DRUID" }, -- Barkskin
-    [29166] = { cd = 360, class = "DRUID" }, -- Innervate
-    [17329] = { cd = 60,  class = "DRUID" }, -- Nature's Grasp
+    { key = "bash", class = "DRUID", ids = { 5211, 6798, 8983 }, cd = 60 },
+    { key = "maim", class = "DRUID", ids = { 22570 }, cd = 10 },
+    { key = "feralcharge", class = "DRUID", ids = { 16979 }, cd = 15 },
+    { key = "naturesgrasp", class = "DRUID", ids = { 16689, 16810, 16811, 16812, 16813, 17329, 27009 }, cd = 60 },
+    { key = "natureswiftness", class = "DRUID", ids = { 17116 }, cd = 180 },
+    { key = "barkskin", class = "DRUID", ids = { 22812 }, cd = 60 },
+    { key = "innervate", class = "DRUID", ids = { 29166 }, cd = 360 },
+    { key = "forceofnature", class = "DRUID", ids = { 33831 }, cd = 180 },
+
+    -- Racials (WotF lives on the Trinket module's icon)
+    { key = "warstomp", ids = { 20549 }, cd = 120 },
+    { key = "arcanetorrent", ids = { 28730, 25046 }, cd = 120 },
+    { key = "stoneform", ids = { 20594 }, cd = 180 },
+    { key = "escapeartist", ids = { 20589 }, cd = 105 },
 }
+
+-- spellID (any rank) -> def. Recorder also uses this to decide which casts
+-- become "cd" events in the match log.
+AA.COOLDOWN_SPELLS = {}
+for _, def in ipairs(AA.COOLDOWN_DEFS) do
+    def.icon = def.icon or def.ids[#def.ids]
+    for _, id in ipairs(def.ids) do
+        AA.COOLDOWN_SPELLS[id] = def
+    end
+end
+
+-- Cooldown to show for `def` given the enemy's detected spec (nil = unknown).
+function AA.CooldownFor(def, spec)
+    if def.talentCd and not (spec and def.untalented and def.untalented[spec]) then
+        return def.talentCd
+    end
+    return def.cd
+end
 
 -------------------------------------------------------------------------------
 -- Interrupt casts matched by NAME (any rank): the recorder logs every attempt
@@ -357,6 +452,14 @@ AA.VOICE_TEXT = {
     shieldwall = "Shield Wall",
     divinefavor = "Divine Favor",
     blessingofsacrifice = "Blessing of Sacrifice",
+    -- 2026-09-30 TBC arena audit
+    naturesgrasp = "Nature's Grasp",
+    viper = "Viper Sting",
+    trapped = "Trapped",
+    maim = "Maim",
+    disarm = "Disarm",
+    innerfocus = "Inner Focus",
+    invisibility = "Invisibility",
 }
 
 local function A(sound, cat)
@@ -467,8 +570,11 @@ AA.ANNOUNCE_SPELLS = {
     -- tbc.wowhead.com and cross-checked against AA.COOLDOWN_SPELLS above,
     -- which already independently tracks Intercept/Sprint/Blink/Feral
     -- Charge for the icon tracker under the same IDs.
-    [100] = A("charge", "cooldown"), -- Warrior Charge (single rank in TBC)
-    [20252] = A("intercept", "cooldown"), -- Warrior Intercept (single rank in TBC)
+    -- Charge/Intercept have 3/5 ranks in TBC (single rank only from Wrath):
+    -- matching rank 1 alone missed every level-70 cast.
+    [100] = A("charge", "cooldown"), [6178] = A("charge", "cooldown"), [11578] = A("charge", "cooldown"),
+    [20252] = A("intercept", "cooldown"), [20616] = A("intercept", "cooldown"), [20617] = A("intercept", "cooldown"),
+    [25272] = A("intercept", "cooldown"), [25275] = A("intercept", "cooldown"),
     [1953] = A("blink", "cooldown"), -- Mage Blink
     [30449] = A("spellsteal", "cooldown"), -- Mage Spellsteal
     [16979] = A("feralcharge", "cooldown"), -- Druid Feral Charge (Bear - the only version in TBC)
@@ -506,6 +612,25 @@ AA.ANNOUNCE_SPELLS = {
     [20216] = A("divinefavor", "cooldown"), -- Paladin Divine Favor
     [6940] = A("blessingofsacrifice", "cooldown"), [20729] = A("blessingofsacrifice", "cooldown"),
     [27147] = A("blessingofsacrifice", "cooldown"), [27148] = A("blessingofsacrifice", "cooldown"), -- Paladin Blessing of Sacrifice (all 4 ranks)
+
+    -- 2026-09-30 TBC arena audit (IDs verified against the wowhead TBC dump
+    -- in .tools/cache-wowhead-tbc-talents.js).
+    [16689] = A("naturesgrasp", "cooldown"), [16810] = A("naturesgrasp", "cooldown"),
+    [16811] = A("naturesgrasp", "cooldown"), [16812] = A("naturesgrasp", "cooldown"),
+    [16813] = A("naturesgrasp", "cooldown"), [17329] = A("naturesgrasp", "cooldown"),
+    [27009] = A("naturesgrasp", "cooldown"), -- Druid Nature's Grasp (all 7 ranks): stop meleeing
+    [3034] = A("viper"), [14279] = A("viper"), [14280] = A("viper"), [27018] = A("viper"), -- Hunter Viper Sting (all 4 ranks)
+    [22570] = A("maim"), -- Druid Maim (stun)
+    [676] = A("disarm"), -- Warrior Disarm
+    [14751] = A("innerfocus", "cooldown"), -- Priest Inner Focus
+    [66] = A("invisibility", "cooldown"), -- Mage Invisibility
+}
+
+-- Debuffs landing on a TEAMMATE that get a callout: sound key by spell ID.
+-- Freezing Trap Effect (all 3 ranks) - the trap drop itself is announced as
+-- "Freezing Trap" from the hunter's cast; this fires when someone steps in.
+AA.ANNOUNCE_FRIENDLY_DEBUFFS = {
+    [3355] = "trapped", [14308] = "trapped", [14309] = "trapped",
 }
 
 -- Party-chat whitelist when chatCallout=party. Keep this tiny — voice/raid
@@ -587,14 +712,16 @@ AA.IMPORTANT_AURAS = {
     [10890] = 7, -- Psychic Scream
     [33786] = 7, -- Cyclone
     [20066] = 7, -- Repentance
-    [8643]  = 6, -- Kidney Shot
+    [408] = 6, [8643]  = 6, -- Kidney Shot
+    [20253] = 6, [20614] = 6, [20615] = 6, [25273] = 6, [25274] = 6, -- Intercept Stun
+    [22570] = 6, -- Maim
     [1833]  = 6, -- Cheap Shot
     [10308] = 6, -- Hammer of Justice
     [19503] = 6, -- Scatter Shot
-    [14311] = 7, -- Freezing Trap
+    [3355] = 7, [14308] = 7, [14309] = 7, -- Freezing Trap Effect (14311 is the trap cast, never an aura)
     [18658] = 6, -- Hibernate
     [26989] = 5, -- Entangling Roots
-    [27068] = 7, -- Wyvern Sting
+    [19386] = 7, [24132] = 7, [24133] = 7, [27068] = 7, -- Wyvern Sting
     [6358]  = 7, -- Seduction
     [11297] = 7, -- Sap
     [38764] = 6, -- Gouge

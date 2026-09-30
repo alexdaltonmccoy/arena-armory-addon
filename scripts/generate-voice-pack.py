@@ -8,6 +8,10 @@ Prereqs:
   gcloud auth application-default login
   gcloud services enable texttospeech.googleapis.com --project=YOUR_PROJECT
 
+The TTS API is enabled on wow-classic-armory-production (NOT the gcloud
+default rebbel-v2-prod), so point ADC billing at it:
+  $env:GOOGLE_CLOUD_QUOTA_PROJECT = "wow-classic-armory-production"
+
 Usage:
   python scripts/generate-voice-pack.py
   python scripts/generate-voice-pack.py --rate 1.35 --voice en-US-Neural2-J
@@ -129,6 +133,14 @@ CLIPS = {
     "shieldwall": "Shield Wall",
     "divinefavor": "Divine Favor",
     "blessingofsacrifice": "Blessing of Sacrifice",
+    # 2026-09-30 TBC arena audit (see ArenaArmory/Data/Spells.lua).
+    "naturesgrasp": "Nature's Grasp",
+    "viper": "Viper Sting",
+    "trapped": "Trapped",
+    "maim": "Maim",
+    "disarm": "Disarm",
+    "innerfocus": "Inner Focus",
+    "invisibility": "Invisibility",
 }
 
 
