@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## v1.10.0 (2026-09-30)
 - Fixed the enemy cooldown tracker missing most level-70 casts: several
   abilities were only recognized by their rank 1 spell, so max-rank Intercept,
   Charge, Pummel, Divine Shield, Nature's Grasp, Death Coil and more never
